@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nx3d"
-version = "22.9.0"
+version = "22.9.1"
 description = "The missing 3D plotting functionality for networkx"
 authors = ["Eric Kalosa-Kenyon <helloateric@gmail.com>"]
 readme = "README.md"
@@ -10,19 +10,22 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-packages = [
-    { include = "src/nx3d_ekalosak/" }
-]
+# packages = [
+#     { include = "src/nx3d/" }
+# ]
 
 [project.urls]
 "Homepage" = "https://github.com/ekalosak/nx3d"
 "Bug Tracker" = "https://github.com/ekalosak/nx3d/issues"
 
+[project.scripts]
+nx3d = "nx3d.__main__:main"
+
 [tool.poetry.dependencies]
 python = "^3.9"
-networkx = "^2.8.6"
-Panda3D = "^1.10.12"
-numpy = "^1.23.3"
+networkx = "^2.8"
+Panda3D = "^1.10"
+numpy = "^1.23"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.3"

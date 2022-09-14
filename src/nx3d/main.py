@@ -14,6 +14,7 @@ TODO
 """
 
 from math import cos, pi, sin, sqrt
+from pathlib import Path
 from typing import Union
 
 import networkx as nx
@@ -25,6 +26,8 @@ from panda3d.core import DirectionalLight, Material
 EPS = 1e-6
 
 Vector = Union[list[float], tuple[float, ...]]
+default_edge = Path(__file__).parent / "data/unit_cylinder_base_at_0.egg"
+default_node = Path(__file__).parent / "data/icosphere.egg"
 
 
 class NxPlot(ShowBase):
@@ -38,8 +41,8 @@ class NxPlot(ShowBase):
         pos=None,
         plot_axes=False,
         verbose=False,
-        edge_fn="data/unit_cylinder_base_at_0.egg",
-        node_fn="data/icosphere.egg",
+        edge_fn=default_edge,
+        node_fn=default_node,
     ):
         ShowBase.__init__(self)
         self.disableMouse()
@@ -207,7 +210,3 @@ def demo():
     """Runs a demo visualization."""
     g = nx.frucht_graph()
     plot(g)
-
-
-if __name__ == "__main__":
-    demo()

@@ -2,7 +2,7 @@
 
 The missing 3D plotting functionality for the excellent `networkx` Python package.
 
-![frucht graph](./data/frucht.gif)
+![-missing image of frucht graph here-](./data/frucht.gif)
 
 # Installation
 In your shell:
