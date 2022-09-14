@@ -1,8 +1,12 @@
 # nx3d
 
+[![-missing docs badge-](https://img.shields.io/badge/docs-GitHub-blue)](https://github.com/ekalosak/nx3d/)
+[![-missing pypi badge-](https://img.shields.io/pypi/v/nx3d)](https://pypi.org/project/nx3d/)
+[![-missing build status badge-](https://img.shields.io/github/workflow/status/ekalosak/nx3d/build)](https://github.com/ekalosak/nx3d/actions)
+
 The missing 3D plotting functionality for the excellent `networkx` Python package.
 
-![-missing image of frucht graph here-](./data/frucht.gif)
+![-missing image of frucht graph-](./data/frucht.gif)
 
 # Installation
 In your shell:
@@ -10,8 +14,15 @@ In your shell:
 pip install nx3d
 ```
 
-# Test
-In your Python REPL:
+# Quickstart
+After installation,
+
+## From your shell
+```sh
+python -m nx3d
+```
+
+## In your Python REPL
 ```python
 import nx3d
 nx3d.demo()
