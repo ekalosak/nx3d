@@ -3,7 +3,20 @@ name = "nx3d"
 version = "22.9.0"
 description = "The missing 3D plotting functionality for networkx"
 authors = ["Eric Kalosa-Kenyon <helloateric@gmail.com>"]
+readme = "README.md"
 license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+packages = [
+    { include = "src/nx3d_ekalosak/" }
+]
+
+[project.urls]
+"Homepage" = "https://github.com/ekalosak/nx3d"
+"Bug Tracker" = "https://github.com/ekalosak/nx3d/issues"
 
 [tool.poetry.dependencies]
 python = "^3.9"
