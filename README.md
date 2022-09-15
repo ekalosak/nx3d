@@ -68,7 +68,9 @@ pre-commit run -a
 
 ## Update the docs
 1. Update the inline docstrings and/or the files in the docs/ directory.
-2. Navigate to the docs/ dir and run `make html`.
+2. Navigate to the docs/ dir and run `make html` to preview your changes.
+3. When you cut a PR, the CI will trigger a ReadTheDocs build.
+4. When merged, the CD will publish those docs (3).
 
 ### First time updating the docs
 I used `brew install python-sphinx`, see installation instructions on [www.sphinx-doc.org](https://www.sphinx-doc.org/en/master/usage/installation.html).

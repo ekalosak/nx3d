@@ -16,6 +16,7 @@ sphinx:
 
 # Install python dependencies from the poetry.lock
 # See https://docs.readthedocs.io/en/stable/guides/poetry.html
+# See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
 python:
   install:
     - method: pip
