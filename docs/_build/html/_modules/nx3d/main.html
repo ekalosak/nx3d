@@ -70,7 +70,7 @@
 
 <span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">cos</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="n">sin</span><span class="p">,</span> <span class="n">sqrt</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Hashable</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
@@ -81,6 +81,9 @@
 <span class="n">EPS</span> <span class="o">=</span> <span class="mf">1e-6</span>
 
 <span class="n">Vector</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span>
+<span class="n">Vec3</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+<span class="n">Vec4</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+<span class="n">Pos3</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Hashable</span><span class="p">,</span> <span class="n">Vec3</span><span class="p">]</span>
 <span class="n">default_edge</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;data/unit_cylinder_base_at_0.egg&quot;</span>
 <span class="n">default_node</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;data/icosphere.egg&quot;</span>
 
@@ -94,7 +97,11 @@
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
-        <span class="n">pos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">pos</span><span class="p">:</span> <span class="n">Pos3</span><span class="p">,</span>
+        <span class="n">node_color</span><span class="p">:</span> <span class="n">Vec4</span><span class="p">,</span>
+        <span class="n">node_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Vec3</span><span class="p">],</span>
+        <span class="n">edge_color</span><span class="p">:</span> <span class="n">Vec4</span><span class="p">,</span>
+        <span class="n">edge_size</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
         <span class="n">plot_axes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">edge_fn</span><span class="o">=</span><span class="n">default_edge</span><span class="p">,</span>
@@ -108,8 +115,6 @@
         <span class="k">if</span> <span class="n">plot_axes</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">add_axes</span><span class="p">(</span><span class="n">edge_fn</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">pos</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">spring_layout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pos</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -125,16 +130,14 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="o">.</span><span class="n">setLight</span><span class="p">(</span><span class="n">dlnp</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">nd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="p">:</span>
-            <span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">nd</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">node_fn</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.45</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">nd</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">node_fn</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">node_color</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">node_size</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">ed</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
-            <span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">ed</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">edge_fn</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">ed</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">edge_fn</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">edge_color</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">edge_size</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">taskMgr</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spinCameraTask</span><span class="p">,</span> <span class="s2">&quot;SpinCameraTask&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ed</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ed</span><span class="p">,</span> <span class="n">fn</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="n">Vector</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
         <span class="n">edge</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
         <span class="n">edge</span><span class="o">.</span><span class="n">reparentTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="p">)</span>
         <span class="n">myMaterial</span> <span class="o">=</span> <span class="n">Material</span><span class="p">()</span>
@@ -145,8 +148,8 @@
         <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">ed</span><span class="p">)</span>
         <span class="n">edge</span><span class="o">.</span><span class="n">setPos</span><span class="p">(</span><span class="o">*</span><span class="n">p0</span><span class="p">)</span>
         <span class="n">dist</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(((</span><span class="n">p0</span> <span class="o">-</span> <span class="n">p1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-        <span class="n">scale</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dist</span><span class="p">)</span>
-        <span class="n">edge</span><span class="o">.</span><span class="n">setScale</span><span class="p">(</span><span class="o">*</span><span class="n">scale</span><span class="p">)</span>
+        <span class="n">scale_</span> <span class="o">=</span> <span class="p">(</span><span class="n">scale</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">dist</span><span class="p">)</span>
+        <span class="n">edge</span><span class="o">.</span><span class="n">setScale</span><span class="p">(</span><span class="o">*</span><span class="n">scale_</span><span class="p">)</span>
 
         <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p1</span> <span class="o">-</span> <span class="n">p0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">d</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
@@ -235,18 +238,41 @@
         <span class="k">return</span> <span class="n">Task</span><span class="o">.</span><span class="n">cont</span>
 
 
-<div class="viewcode-block" id="plot_nx3d"><a class="viewcode-back" href="../../api.html#nx3d.plot_nx3d">[docs]</a><span class="k">def</span> <span class="nf">plot_nx3d</span><span class="p">(</span><span class="n">g</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_axes</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Produce a panda3d.showbase.ShowBase.ShowBase object capable of rendering the nx.Graph.</span>
+<div class="viewcode-block" id="plot_nx3d"><a class="viewcode-back" href="../../api.html#nx3d.plot_nx3d">[docs]</a><span class="k">def</span> <span class="nf">plot_nx3d</span><span class="p">(</span>
+    <span class="n">g</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
+    <span class="n">pos</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Pos3</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">node_color</span><span class="p">:</span> <span class="n">Vec4</span><span class="o">=</span><span class="p">(</span><span class="mf">0.35</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">node_size</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Vec3</span><span class="p">]</span><span class="o">=</span><span class="mf">0.65</span><span class="p">,</span>
+    <span class="n">edge_color</span><span class="p">:</span> <span class="n">Vec4</span><span class="o">=</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="n">edge_size</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">plot_axes</span><span class="o">=</span><span class="kc">False</span>
+    <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Produce a panda3d object capable of rendering the nx.Graph.</span>
+
+<span class="sd">    Use the return object as follows:</span>
+<span class="sd">    .. highlight:: python</span>
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        my_app = plot_nx3d(...)</span>
+<span class="sd">        my_app.run()</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        g (nx.Graph): The graph you&#39;d like to plot.</span>
-<span class="sd">        verbose (bool): Print diagnostic information to stdout.</span>
-<span class="sd">        plot_axes (bool): Show the XYZ axes in the 3D scene</span>
+<span class="sd">        g: The graph you&#39;d like to plot.</span>
+<span class="sd">        pos: Positions of the nodes in the graph. If None, spring_layout will be used.</span>
+<span class="sd">        node_color: RGBA color for the nodes. Currently homogeneous colors only suppported.</span>
+<span class="sd">        node_size: Size of the nodes, either radius or XYZ dimensions.</span>
+<span class="sd">        edge_color: RGBA color for the edges. Currently homogeneous colors only suppported.</span>
+<span class="sd">        edge_size: Radius of the edges.</span>
+<span class="sd">        verbose: Print diagnostic information to stdout.</span>
+<span class="sd">        plot_axes: Show the XYZ axes in the 3D scene</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        ShowBase: The Panda3D object that contains the (graphics) scene to be rendered</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">app</span> <span class="o">=</span> <span class="n">NxPlot</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">plot_axes</span><span class="o">=</span><span class="n">plot_axes</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">spring_layout</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">NxPlot</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">pos</span><span class="o">=</span><span class="n">pos</span><span class="p">,</span> <span class="n">node_color</span><span class="o">=</span><span class="n">node_color</span><span class="p">,</span> <span class="n">node_size</span><span class="o">=</span><span class="n">node_size</span><span class="p">,</span> <span class="n">edge_color</span><span class="o">=</span><span class="n">edge_color</span><span class="p">,</span> <span class="n">edge_size</span><span class="o">=</span><span class="n">edge_size</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">plot_axes</span><span class="o">=</span><span class="n">plot_axes</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">app</span></div>
 
 
@@ -256,8 +282,9 @@
 <span class="sd">    This is where you should start. Calling this function on your graph will cause a pop-up</span>
 <span class="sd">    containing the visualization to appear.</span>
 
-<span class="sd">    g (nx.Graph): The graph you&#39;d like to plot.</span>
-<span class="sd">    debug (bool): Set to debug mode, including diagnostic information printed to stdout and XYZ axes</span>
+<span class="sd">    Args:</span>
+<span class="sd">        g (nx.Graph): The graph you&#39;d like to plot.</span>
+<span class="sd">        debug (bool): Set to debug mode, including diagnostic information printed to stdout and XYZ axes</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        None</span>
@@ -269,7 +296,7 @@
 <div class="viewcode-block" id="demo"><a class="viewcode-back" href="../../api.html#nx3d.demo">[docs]</a><span class="k">def</span> <span class="nf">demo</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Runs a demo visualization. Good for checking that your installation worked.&quot;&quot;&quot;</span>
     <span class="n">g</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">frucht_graph</span><span class="p">()</span>
-    <span class="n">plot</span><span class="p">(</span><span class="n">g</span><span class="p">)</span></div>
+    <span class="n">plot</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
 </pre></div>
 
            </div>

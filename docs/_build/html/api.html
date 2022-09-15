@@ -80,25 +80,41 @@
 <dd><p>Plot my graph now!</p>
 <p>This is where you should start. Calling this function on your graph will cause a pop-up
 containing the visualization to appear.</p>
-<p>g (nx.Graph): The graph you’d like to plot.
-debug (bool): Set to debug mode, including diagnostic information printed to stdout and XYZ axes</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>g</strong> (<em>nx.Graph</em>) – The graph you’d like to plot.</p></li>
+<li><p><strong>debug</strong> (<em>bool</em>) – Set to debug mode, including diagnostic information printed to stdout and XYZ axes</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="nx3d.plot_nx3d">
-<span class="sig-prename descclassname"><span class="pre">nx3d.</span></span><span class="sig-name descname"><span class="pre">plot_nx3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">g</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nx3d/main.html#plot_nx3d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nx3d.plot_nx3d" title="Permalink to this definition"></a></dt>
-<dd><p>Produce a panda3d.showbase.ShowBase.ShowBase object capable of rendering the nx.Graph.</p>
+<span class="sig-prename descclassname"><span class="pre">nx3d.</span></span><span class="sig-name descname"><span class="pre">plot_nx3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">g</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Hashable</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0.35,</span> <span class="pre">0,</span> <span class="pre">1,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.65</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0.2,</span> <span class="pre">0.2,</span> <span class="pre">0.2,</span> <span class="pre">1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/nx3d/main.html#plot_nx3d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#nx3d.plot_nx3d" title="Permalink to this definition"></a></dt>
+<dd><p>Produce a panda3d object capable of rendering the nx.Graph.</p>
+<p>Use the return object as follows:
+.. highlight:: python
+.. code-block:: python</p>
+<blockquote>
+<div><p>my_app = plot_nx3d(…)
+my_app.run()</p>
+</div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>g</strong> (<em>nx.Graph</em>) – The graph you’d like to plot.</p></li>
-<li><p><strong>verbose</strong> (<em>bool</em>) – Print diagnostic information to stdout.</p></li>
-<li><p><strong>plot_axes</strong> (<em>bool</em>) – Show the XYZ axes in the 3D scene</p></li>
+<li><p><strong>g</strong> – The graph you’d like to plot.</p></li>
+<li><p><strong>pos</strong> – Positions of the nodes in the graph. If None, spring_layout will be used.</p></li>
+<li><p><strong>node_color</strong> – RGBA color for the nodes. Currently homogeneous colors only suppported.</p></li>
+<li><p><strong>node_size</strong> – Size of the nodes, either radius or XYZ dimensions.</p></li>
+<li><p><strong>edge_color</strong> – RGBA color for the edges. Currently homogeneous colors only suppported.</p></li>
+<li><p><strong>edge_size</strong> – Radius of the edges.</p></li>
+<li><p><strong>verbose</strong> – Print diagnostic information to stdout.</p></li>
+<li><p><strong>plot_axes</strong> – Show the XYZ axes in the 3D scene</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>

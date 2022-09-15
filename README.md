@@ -1,6 +1,7 @@
 # nx3d
 
-[![-missing docs badge-](https://img.shields.io/badge/docs-GitHub-blue)](https://github.com/ekalosak/nx3d/)
+[![-missing homepage badge-](https://img.shields.io/badge/home-GitHub-blueviolet)](https://github.com/ekalosak/nx3d)
+[![-missing docs badge-](https://img.shields.io/badge/docs-ReadTheDocs-blue)](https://nx3d.readthedocs.io/en/latest/)
 [![-missing pypi badge-](https://img.shields.io/pypi/v/nx3d)](https://pypi.org/project/nx3d/)
 [![-missing build status badge-](https://img.shields.io/github/workflow/status/ekalosak/nx3d/build)](https://github.com/ekalosak/nx3d/actions)
 
@@ -73,14 +74,16 @@ pre-commit run -a
 I used `brew install python-sphinx`, see installation instructions on [www.sphinx-doc.org](https://www.sphinx-doc.org/en/master/usage/installation.html).
 
 ## Hack on some code
-- configurable colors and sizes
+- heterogeneous sizes and colors
 - node labels
 - edge labels
 - support for DiGraph and MultiDiGraph
-- tests (for the trig at least: add collision nodes to the ends of the edges and check that they collide with source and
-  sink nodes)
+- tests
+  - for the trig: add collision nodes to the ends of the edges and check that they collide with source and sink nodes
+  - for the API: fizzbuzz it, check some basic content of the ShowBase returned by `plot_nx3d`
+  - CI running the tests and a badge
 - interactive camera controls
-- animation?
+- animation control via callbacks
 - save video / snapshot to file
   (https://docs.panda3d.org/1.10/python/reference/direct.showbase.ShowBase?highlight=screenshot#direct.showbase.ShowBase.ShowBase.movie)
 

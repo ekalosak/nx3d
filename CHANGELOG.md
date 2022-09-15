@@ -1,5 +1,5 @@
 # Thurs Sep 15 2022
-22.9.2 - NOT PUBLISHED
+22.9.2
 - Removed metadata from `__init__.py`; all that goes in pyproject.toml
 - Added docs/
 - Configurable colors and sizes
