@@ -170,9 +170,10 @@ class NxPlot(ShowBase):
 
 def plot_nx3d(g: nx.Graph, verbose=False, plot_axes=False):
     """Produce a panda3d.showbase.ShowBase.ShowBase object capable of rendering the nx.Graph.
+
     :param graph: The graph you'd like to plot.
     :type graph: nx.Graph
-    :param debug: Set to debug mode
+    :param debug: Set to debug mode (print to stdout, show xyz axes)
     :type debug: bool
     :return: Panda3D ShowBase object that runs the visualization
     :rtype: ShowBase
@@ -182,8 +183,11 @@ def plot_nx3d(g: nx.Graph, verbose=False, plot_axes=False):
 
 
 def plot(g: nx.Graph, debug=False):
-    """Plot my graph now! This is where you should start. Calling this function on your graph will cause a pop-up
+    """Plot my graph now!
+
+    This is where you should start. Calling this function on your graph will cause a pop-up
     containing the visualization to appear.
+
     :param graph: The graph you'd like to plot.
     :type graph: nx.Graph
     :param debug: Set to debug mode
@@ -196,6 +200,6 @@ def plot(g: nx.Graph, debug=False):
 
 
 def demo():
-    """Runs a demo visualization."""
+    """Runs a demo visualization. Good for checking that your installation worked."""
     g = nx.frucht_graph()
     plot(g)

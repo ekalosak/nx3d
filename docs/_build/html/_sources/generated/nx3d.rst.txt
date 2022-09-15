@@ -1,0 +1,4 @@
+﻿nx3d
+====
+
+.. automodule:: nx3d
