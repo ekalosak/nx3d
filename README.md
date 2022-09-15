@@ -3,11 +3,11 @@
 [![-missing homepage badge-](https://img.shields.io/badge/home-GitHub-blueviolet)](https://github.com/ekalosak/nx3d)
 [![-missing docs badge-](https://img.shields.io/badge/docs-ReadTheDocs-blue)](https://nx3d.readthedocs.io/en/latest/)
 [![-missing pypi badge-](https://img.shields.io/pypi/v/nx3d)](https://pypi.org/project/nx3d/)
-[![-missing build status badge-](https://img.shields.io/github/workflow/status/ekalosak/nx3d/build)](https://github.com/ekalosak/nx3d/actions)
+[![-missing build status badge-](https://img.shields.io/github/workflow/status/ekalosak/nx3d/Build%20nx3d%20and%20publish%20to%20PyPi)](https://github.com/ekalosak/nx3d/actions)
 
 The missing 3D plotting functionality for the excellent `networkx` Python package.
 
-![-missing image of frucht graph-](./data/frucht.gif)
+![-missing image of frucht graph-](https://raw.githubusercontent.com/ekalosak/nx3d/cf473d1dfab506ecd4044f4693c09aea0e1153ba/data/frucht.gif)
 
 # Installation
 In your shell:
@@ -68,7 +68,9 @@ pre-commit run -a
 
 ## Update the docs
 1. Update the inline docstrings and/or the files in the docs/ directory.
-2. Navigate to the docs/ dir and run `make html`.
+2. Navigate to the docs/ dir and run `make html` to preview your changes.
+3. When you cut a PR, the CI will trigger a ReadTheDocs build.
+4. When merged, the CD will publish those docs (3).
 
 ### First time updating the docs
 I used `brew install python-sphinx`, see installation instructions on [www.sphinx-doc.org](https://www.sphinx-doc.org/en/master/usage/installation.html).
