@@ -238,12 +238,13 @@
 <div class="viewcode-block" id="plot_nx3d"><a class="viewcode-back" href="../../api.html#nx3d.plot_nx3d">[docs]</a><span class="k">def</span> <span class="nf">plot_nx3d</span><span class="p">(</span><span class="n">g</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_axes</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Produce a panda3d.showbase.ShowBase.ShowBase object capable of rendering the nx.Graph.</span>
 
-<span class="sd">    :param graph: The graph you&#39;d like to plot.</span>
-<span class="sd">    :type graph: nx.Graph</span>
-<span class="sd">    :param debug: Set to debug mode (print to stdout, show xyz axes)</span>
-<span class="sd">    :type debug: bool</span>
-<span class="sd">    :return: Panda3D ShowBase object that runs the visualization</span>
-<span class="sd">    :rtype: ShowBase</span>
+<span class="sd">    Args:</span>
+<span class="sd">        g (nx.Graph): The graph you&#39;d like to plot.</span>
+<span class="sd">        verbose (bool): Print diagnostic information to stdout.</span>
+<span class="sd">        plot_axes (bool): Show the XYZ axes in the 3D scene</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ShowBase: The Panda3D object that contains the (graphics) scene to be rendered</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">app</span> <span class="o">=</span> <span class="n">NxPlot</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">plot_axes</span><span class="o">=</span><span class="n">plot_axes</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">app</span></div>
@@ -255,19 +256,18 @@
 <span class="sd">    This is where you should start. Calling this function on your graph will cause a pop-up</span>
 <span class="sd">    containing the visualization to appear.</span>
 
-<span class="sd">    :param graph: The graph you&#39;d like to plot.</span>
-<span class="sd">    :type graph: nx.Graph</span>
-<span class="sd">    :param debug: Set to debug mode</span>
-<span class="sd">    :type debug: bool</span>
-<span class="sd">    :return: None</span>
-<span class="sd">    :rtype: NoneType</span>
+<span class="sd">    g (nx.Graph): The graph you&#39;d like to plot.</span>
+<span class="sd">    debug (bool): Set to debug mode, including diagnostic information printed to stdout and XYZ axes</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">app</span> <span class="o">=</span> <span class="n">plot_nx3d</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span> <span class="n">plot_axes</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
     <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="demo"><a class="viewcode-back" href="../../api.html#nx3d.demo">[docs]</a><span class="k">def</span> <span class="nf">demo</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot;Runs a demo visualization. Good for checking that your installation worked. &quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Runs a demo visualization. Good for checking that your installation worked.&quot;&quot;&quot;</span>
     <span class="n">g</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">frucht_graph</span><span class="p">()</span>
     <span class="n">plot</span><span class="p">(</span><span class="n">g</span><span class="p">)</span></div>
 </pre></div>

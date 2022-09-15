@@ -80,18 +80,11 @@
 <dd><p>Plot my graph now!</p>
 <p>This is where you should start. Calling this function on your graph will cause a pop-up
 containing the visualization to appear.</p>
+<p>g (nx.Graph): The graph you’d like to plot.
+debug (bool): Set to debug mode, including diagnostic information printed to stdout and XYZ axes</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The graph you’d like to plot.</p></li>
-<li><p><strong>debug</strong> (<em>bool</em>) – Set to debug mode</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>NoneType</p>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -103,12 +96,13 @@ containing the visualization to appear.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>graph</strong> (<em>nx.Graph</em>) – The graph you’d like to plot.</p></li>
-<li><p><strong>debug</strong> (<em>bool</em>) – Set to debug mode (print to stdout, show xyz axes)</p></li>
+<li><p><strong>g</strong> (<em>nx.Graph</em>) – The graph you’d like to plot.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – Print diagnostic information to stdout.</p></li>
+<li><p><strong>plot_axes</strong> (<em>bool</em>) – Show the XYZ axes in the 3D scene</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Panda3D ShowBase object that runs the visualization</p>
+<dd class="field-even"><p>The Panda3D object that contains the (graphics) scene to be rendered</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>ShowBase</p>

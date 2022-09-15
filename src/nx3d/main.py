@@ -171,12 +171,13 @@ class NxPlot(ShowBase):
 def plot_nx3d(g: nx.Graph, verbose=False, plot_axes=False):
     """Produce a panda3d.showbase.ShowBase.ShowBase object capable of rendering the nx.Graph.
 
-    :param graph: The graph you'd like to plot.
-    :type graph: nx.Graph
-    :param debug: Set to debug mode (print to stdout, show xyz axes)
-    :type debug: bool
-    :return: Panda3D ShowBase object that runs the visualization
-    :rtype: ShowBase
+    Args:
+        g (nx.Graph): The graph you'd like to plot.
+        verbose (bool): Print diagnostic information to stdout.
+        plot_axes (bool): Show the XYZ axes in the 3D scene
+
+    Returns:
+        ShowBase: The Panda3D object that contains the (graphics) scene to be rendered
     """
     app = NxPlot(g, verbose=verbose, plot_axes=plot_axes)
     return app
@@ -188,12 +189,11 @@ def plot(g: nx.Graph, debug=False):
     This is where you should start. Calling this function on your graph will cause a pop-up
     containing the visualization to appear.
 
-    :param graph: The graph you'd like to plot.
-    :type graph: nx.Graph
-    :param debug: Set to debug mode
-    :type debug: bool
-    :return: None
-    :rtype: NoneType
+    g (nx.Graph): The graph you'd like to plot.
+    debug (bool): Set to debug mode, including diagnostic information printed to stdout and XYZ axes
+
+    Returns:
+        None
     """
     app = plot_nx3d(g, verbose=debug, plot_axes=debug)
     app.run()
