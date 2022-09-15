@@ -1,4 +1,7 @@
 # Thurs Sep 15 2022
+22.9.3
+- Updated with ReadTheDocs webhooks, no change in functionality but revved to push the updated README to PyPi
+
 22.9.2
 - Removed metadata from `__init__.py`; all that goes in pyproject.toml
 - Added docs/

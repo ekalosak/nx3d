@@ -9,7 +9,7 @@
 project = "nx3d"
 copyright = "2022, Eric Kalosa-Kenyon"
 author = "Eric Kalosa-Kenyon"
-release = "22.9.2"
+release = "22.9.3"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
