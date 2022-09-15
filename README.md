@@ -47,6 +47,16 @@ Currently, there's no testing or enforced formatting with CI to keep this young 
 With that in mind, the pre-commit hooks defined in `.pre-commit-config.yaml` apply linting and formatting to keep the
 project clean. Please use the pre-commit hooks before making a PR.
 
+## Clone the code
+
+## Setup the development environment
+
+You can do this as you like, though you might consider:
+1. Install `poetry`
+2. Run `poetry shell`
+3. Run `poetry install`
+4. Verify the installation by running `python -m nx3d`
+
 ## Set up pre-commit
 From this project's root, initialize pre-commit as follows:
 
@@ -54,3 +64,29 @@ From this project's root, initialize pre-commit as follows:
 pre-commit install
 pre-commit run -a
 ```
+
+## Update the docs
+1. Update the inline docstrings and/or the files in the docs/ directory.
+2. Navigate to the docs/ dir and run `make html`.
+
+### First time updating the docs
+I used `brew install python-sphinx`, see installation instructions on [www.sphinx-doc.org](https://www.sphinx-doc.org/en/master/usage/installation.html).
+
+## Hack on some code
+- configurable colors and sizes
+- node labels
+- edge labels
+- support for DiGraph and MultiDiGraph
+- tests (for the trig at least: add collision nodes to the ends of the edges and check that they collide with source and
+  sink nodes)
+- interactive camera controls
+- animation?
+- save video / snapshot to file
+  (https://docs.panda3d.org/1.10/python/reference/direct.showbase.ShowBase?highlight=screenshot#direct.showbase.ShowBase.ShowBase.movie)
+
+## Open a PR
+- fork this repo
+- push your code to your repo
+- open a pull request against this repo
+
+When it merges, CD will push to PyPi.

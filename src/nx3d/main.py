@@ -1,16 +1,4 @@
-""" This source provides functionality for plotting nodes and edges of nx.Graph objects.
-TODO
-- inline documentation
-- readthedocs
-- configurable colors and sizes
-- interactive camera controls
-- node labels
-- edge labels
-- support for DiGraph and MultiDiGraph
-- tests (for the trig at least)
-- animation?
-- save to file
-  (https://docs.panda3d.org/1.10/python/reference/direct.showbase.ShowBase?highlight=screenshot#direct.showbase.ShowBase.ShowBase.movie)
+""" This source provides functionality for plotting nodes and edges of nx.Graph objects in 3D.
 """
 
 from math import cos, pi, sin, sqrt
@@ -32,7 +20,8 @@ default_node = Path(__file__).parent / "data/icosphere.egg"
 
 class NxPlot(ShowBase):
     """This is the main class for plotting nx graphs. You should use the convenience functions that wrap this class for
-    best results.
+    best results. The purpose of this Python package is to help you avoid having to deal directly with Panda3D, and
+    using this class directly voids that.
     """
 
     def __init__(

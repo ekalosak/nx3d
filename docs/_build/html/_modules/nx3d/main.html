@@ -1,0 +1,299 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>nx3d.main &#8212; nx3d 22.9.2 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+
+
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+
+
+          <div class="body" role="main">
+
+  <h1>Source code for nx3d.main</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot; This source provides functionality for plotting nodes and edges of nx.Graph objects in 3D.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">cos</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="n">sin</span><span class="p">,</span> <span class="n">sqrt</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">direct.showbase.ShowBase</span> <span class="kn">import</span> <span class="n">ShowBase</span>
+<span class="kn">from</span> <span class="nn">direct.task</span> <span class="kn">import</span> <span class="n">Task</span>
+<span class="kn">from</span> <span class="nn">panda3d.core</span> <span class="kn">import</span> <span class="n">DirectionalLight</span><span class="p">,</span> <span class="n">Material</span>
+
+<span class="n">EPS</span> <span class="o">=</span> <span class="mf">1e-6</span>
+
+<span class="n">Vector</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span>
+<span class="n">default_edge</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;data/unit_cylinder_base_at_0.egg&quot;</span>
+<span class="n">default_node</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;data/icosphere.egg&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">NxPlot</span><span class="p">(</span><span class="n">ShowBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; This is the main class for plotting nx graphs. You should use the convenience functions that wrap this class for</span>
+<span class="sd">    best results. The purpose of this Python package is to help you avoid having to deal directly with Panda3D, and</span>
+<span class="sd">    using this class directly voids that.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">graph</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span>
+        <span class="n">pos</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">plot_axes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">edge_fn</span><span class="o">=</span><span class="n">default_edge</span><span class="p">,</span>
+        <span class="n">node_fn</span><span class="o">=</span><span class="n">default_node</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">ShowBase</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">disableMouse</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">g</span> <span class="o">=</span> <span class="n">graph</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+
+        <span class="k">if</span> <span class="n">plot_axes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_axes</span><span class="p">(</span><span class="n">edge_fn</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">pos</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">spring_layout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">iterations</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pos</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Positions must be 3-dimensional.&quot;</span>
+                    <span class="s2">&quot; Try using the `dim=3` kwarg for computing positions from networkx layout functions.&quot;</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="n">pos</span>
+
+        <span class="k">for</span> <span class="n">hpr</span> <span class="ow">in</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="p">(</span><span class="mi">90</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">90</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="o">-</span><span class="mi">90</span><span class="p">)]:</span>
+            <span class="n">dlight</span> <span class="o">=</span> <span class="n">DirectionalLight</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;my dlight </span><span class="si">{</span><span class="n">hpr</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">dlnp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="o">.</span><span class="n">attachNewNode</span><span class="p">(</span><span class="n">dlight</span><span class="p">)</span>
+            <span class="n">dlnp</span><span class="o">.</span><span class="n">setHpr</span><span class="p">(</span><span class="o">*</span><span class="n">hpr</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="o">.</span><span class="n">setLight</span><span class="p">(</span><span class="n">dlnp</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">nd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="p">:</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">nd</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">node_fn</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.45</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">ed</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">g</span><span class="o">.</span><span class="n">edges</span><span class="p">:</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">ed</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">fn</span><span class="o">=</span><span class="n">edge_fn</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">taskMgr</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">spinCameraTask</span><span class="p">,</span> <span class="s2">&quot;SpinCameraTask&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_edge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ed</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="n">color</span><span class="p">):</span>
+        <span class="n">edge</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+        <span class="n">edge</span><span class="o">.</span><span class="n">reparentTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="p">)</span>
+        <span class="n">myMaterial</span> <span class="o">=</span> <span class="n">Material</span><span class="p">()</span>
+        <span class="n">myMaterial</span><span class="o">.</span><span class="n">setShininess</span><span class="p">(</span><span class="mf">5.0</span><span class="p">)</span>
+        <span class="n">myMaterial</span><span class="o">.</span><span class="n">setBaseColor</span><span class="p">(</span><span class="n">color</span><span class="p">)</span>
+        <span class="n">edge</span><span class="o">.</span><span class="n">setMaterial</span><span class="p">(</span><span class="n">myMaterial</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">[</span><span class="n">e</span><span class="p">]</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">ed</span><span class="p">)</span>
+        <span class="n">edge</span><span class="o">.</span><span class="n">setPos</span><span class="p">(</span><span class="o">*</span><span class="n">p0</span><span class="p">)</span>
+        <span class="n">dist</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(((</span><span class="n">p0</span> <span class="o">-</span> <span class="n">p1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dist</span><span class="p">)</span>
+        <span class="n">edge</span><span class="o">.</span><span class="n">setScale</span><span class="p">(</span><span class="o">*</span><span class="n">scale</span><span class="p">)</span>
+
+        <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p1</span> <span class="o">-</span> <span class="n">p0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ix</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">argwhere</span><span class="p">(</span><span class="n">d</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">d</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span> <span class="o">=</span> <span class="n">EPS</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;color </span><span class="si">{</span><span class="n">color</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;p0 </span><span class="si">{</span><span class="n">p0</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;p1 </span><span class="si">{</span><span class="n">p1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;p1 - p0 </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;dist </span><span class="si">{</span><span class="n">dist</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># FIRST pitch</span>
+        <span class="c1"># The pitch rotates the Z-axis-aligned cylinder so that the far end of the cylinder is XY-coplanar with the</span>
+        <span class="c1"># target node. The triangle is that having a height of d[2] and a hypotenuse of dist. Setting the height to d[2]</span>
+        <span class="c1"># ensures that the tip of the hypotenuse will be co-XY-planar with the p1 node.</span>
+        <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">pitch</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="n">dist</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">pitch</span> <span class="o">&lt;</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">pitch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arccos</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="n">dist</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">pitch</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">pitch</span> <span class="o">=</span> <span class="n">pitch</span> <span class="o">/</span> <span class="n">pi</span> <span class="o">*</span> <span class="mi">180</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;pitch </span><span class="si">{</span><span class="n">pitch</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">edge</span><span class="o">.</span><span class="n">setP</span><span class="p">(</span><span class="n">pitch</span><span class="p">)</span>
+
+        <span class="c1"># SECOND heading</span>
+        <span class="c1"># The heading rotates the cylinder end along an arc embedded in the XY plane at z=p1[2]. The angle is that of</span>
+        <span class="c1"># the XY projected triangle formed by p0 and p1.</span>
+        <span class="n">heading</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">heading</span> <span class="o">=</span> <span class="n">heading</span> <span class="o">/</span> <span class="n">pi</span> <span class="o">*</span> <span class="mi">180</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;heading </span><span class="si">{</span><span class="n">heading</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">edge</span><span class="o">.</span><span class="n">setH</span><span class="p">(</span><span class="n">heading</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">edge</span>
+
+    <span class="k">def</span> <span class="nf">add_node</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">nd</span><span class="p">,</span>
+        <span class="n">fn</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">scale</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Vector</span><span class="p">],</span>
+        <span class="n">color</span><span class="p">:</span> <span class="n">Vector</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">reparentTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">setScale</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">setPos</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">[</span><span class="n">nd</span><span class="p">])</span>
+
+        <span class="n">myMaterial</span> <span class="o">=</span> <span class="n">Material</span><span class="p">()</span>
+        <span class="n">myMaterial</span><span class="o">.</span><span class="n">setShininess</span><span class="p">(</span><span class="mf">5.0</span><span class="p">)</span>
+        <span class="n">myMaterial</span><span class="o">.</span><span class="n">setBaseColor</span><span class="p">(</span><span class="n">color</span><span class="p">)</span>
+        <span class="n">node</span><span class="o">.</span><span class="n">setMaterial</span><span class="p">(</span><span class="n">myMaterial</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_axes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fn</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;put 3 cylinders in r:x:small, g:y:med, b:z:big; for debugging&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zax</span><span class="o">.</span><span class="n">reparentTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zax</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zax</span><span class="o">.</span><span class="n">setScale</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zax</span><span class="o">.</span><span class="n">setPos</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xax</span><span class="o">.</span><span class="n">reparentTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xax</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xax</span><span class="o">.</span><span class="n">setScale</span><span class="p">(</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xax</span><span class="o">.</span><span class="n">setPos</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xax</span><span class="o">.</span><span class="n">setR</span><span class="p">(</span><span class="mi">90</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yax</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">loadModel</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yax</span><span class="o">.</span><span class="n">reparentTo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">render</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yax</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yax</span><span class="o">.</span><span class="n">setScale</span><span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yax</span><span class="o">.</span><span class="n">setPos</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yax</span><span class="o">.</span><span class="n">setP</span><span class="p">(</span><span class="o">-</span><span class="mi">90</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">spinCameraTask</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">):</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="mi">20</span>  <span class="c1"># how far away to be</span>
+        <span class="n">speed</span> <span class="o">=</span> <span class="mf">25.0</span>  <span class="c1"># how fast to spin</span>
+        <span class="n">angleDegrees</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">time</span> <span class="o">*</span> <span class="n">speed</span>
+        <span class="n">angleRadians</span> <span class="o">=</span> <span class="n">angleDegrees</span> <span class="o">*</span> <span class="p">(</span><span class="n">pi</span> <span class="o">/</span> <span class="mf">180.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="o">.</span><span class="n">setPos</span><span class="p">(</span>
+            <span class="n">length</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">angleRadians</span><span class="p">),</span> <span class="o">-</span><span class="n">length</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">angleRadians</span><span class="p">),</span> <span class="n">length</span> <span class="o">/</span> <span class="mf">2.0</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="o">.</span><span class="n">setHpr</span><span class="p">(</span><span class="n">angleDegrees</span><span class="p">,</span> <span class="o">-</span><span class="n">length</span> <span class="o">*</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Task</span><span class="o">.</span><span class="n">cont</span>
+
+
+<span class="k">def</span> <span class="nf">plot_nx3d</span><span class="p">(</span><span class="n">g</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">plot_axes</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Produce a panda3d.showbase.ShowBase.ShowBase object capable of rendering the nx.Graph.</span>
+<span class="sd">    :param graph: The graph you&#39;d like to plot.</span>
+<span class="sd">    :type graph: nx.Graph</span>
+<span class="sd">    :param debug: Set to debug mode</span>
+<span class="sd">    :type debug: bool</span>
+<span class="sd">    :return: Panda3D ShowBase object that runs the visualization</span>
+<span class="sd">    :rtype: ShowBase</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">NxPlot</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">plot_axes</span><span class="o">=</span><span class="n">plot_axes</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">app</span>
+
+
+<div class="viewcode-block" id="plot"><a class="viewcode-back" href="../../index.html#nx3d.plot">[docs]</a><span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="n">g</span><span class="p">:</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Plot my graph now! This is where you should start. Calling this function on your graph will cause a pop-up</span>
+<span class="sd">    containing the visualization to appear.</span>
+<span class="sd">    :param graph: The graph you&#39;d like to plot.</span>
+<span class="sd">    :type graph: nx.Graph</span>
+<span class="sd">    :param debug: Set to debug mode</span>
+<span class="sd">    :type debug: bool</span>
+<span class="sd">    :return: None</span>
+<span class="sd">    :rtype: NoneType</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">plot_nx3d</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">debug</span><span class="p">,</span> <span class="n">plot_axes</span><span class="o">=</span><span class="n">debug</span><span class="p">)</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></div>
+
+
+<span class="k">def</span> <span class="nf">demo</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Runs a demo visualization.&quot;&quot;&quot;</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">frucht_graph</span><span class="p">()</span>
+    <span class="n">plot</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">nx3d</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Eric Kalosa-Kenyon.
+
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.1.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+
+    </div>
+
+
+
+
+  </body>
+</html>
