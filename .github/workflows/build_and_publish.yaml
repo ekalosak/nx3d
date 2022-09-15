@@ -1,7 +1,6 @@
 name: Build nx3d and publish to PyPi
 
 on:
-  pull_request:
   push:
     branches:
       - main
