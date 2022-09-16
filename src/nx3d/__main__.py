@@ -9,12 +9,12 @@ if __name__ == "__main__":
         verbose = "verbose" in sys.argv
         plot_axes = "plot_axes" in sys.argv
         cam_mouse_control = "cam_mouse_control" in sys.argv
+        nx3d.demo(
+            debug,
+            autolabel=autolabel,
+            verbose=verbose,
+            plot_axes=plot_axes,
+            cam_mouse_control=cam_mouse_control,
+        )
     else:
-        debug = False
-    nx3d.demo(
-        debug,
-        autolabel=autolabel,
-        verbose=verbose,
-        plot_axes=plot_axes,
-        cam_mouse_control=cam_mouse_control,
-    )
+        nx3d.demo()
