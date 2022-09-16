@@ -1,31 +1,31 @@
 """ This source provides functionality for plotting nodes and edges of nx.Graph objects in 3D.
 """
 
-from math import cos, pi, sin, sqrt
+from math import asin, cos, pi, sin, sqrt
 from pathlib import Path
 from typing import Any, Callable, Hashable, Optional, Union
 
 import networkx as nx
 import numpy as np
 from direct.gui.OnscreenText import OnscreenText
+from direct.showbase.DirectObject import DirectObject
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-from panda3d.core import DirectionalLight, Material, NodePath, TextNode
+from panda3d.core import DirectionalLight, KeyboardButton, Material, NodePath, TextNode
 
 KEYBOARD_CONTROLLS = """
 wasd - move camera around
-qe - zoom in and out
-r - reset
+io - zoom in and out
 """
 MOUSE_CONTROLLS = """
 mouse1 drag - move
 mouse2 drag - zoom
 mouse3 drag - rotate
-r - reset
 """
 
 
-EPS = 1e-6
+EPS = 1e-6  # numerical non-zero
+UPS = 32  # updates per second to state
 
 Vector = Union[list[float], tuple[float, ...]]
 Vec3 = tuple[float, float, float]
@@ -47,6 +47,17 @@ default_edge = {
     "color": (0.2, 0.2, 0.2, 1),
     "text_color": (0, 1, 1, 1),
 }
+
+
+class Hello(DirectObject):
+    def __init__(self):
+        self.accept("mouse1", self.printHello)
+
+    def printHello(self):
+        print("Hello!")
+
+
+h = Hello()
 
 
 class NxPlot(ShowBase):
@@ -73,6 +84,7 @@ class NxPlot(ShowBase):
         autolabel: Use the string representation of the nx.Graphs' nodes and edges as labels.
         graph_state_func: This function will be called every <state_trans_freq> seconds to update the internal nx.Graph.
         state_trans_freq: How often, in seconds, to apply the graph_state_func.
+        initial_camera_speed: List of length 2 having theta and phi angle speeds in degrees per second
 
     Returns:
         ShowBase: The Panda3D object capable of rendering the graph
@@ -98,14 +110,13 @@ class NxPlot(ShowBase):
         edge_fn=default_edge["filepath"],
         graph_state_func: Optional[Callable[[nx.Graph], Any]] = None,
         graph_trans_frq: Optional[float] = None,
-        initial_camera_speed=24.0,
+        initial_camera_speed=[24.0, 10.0],
     ):
         ShowBase.__init__(self)
 
         self.g = graph
         self.verbose = verbose
         self.graph_state_func = graph_state_func
-        self.cam_speed = initial_camera_speed
         if pos is None:
             pos_scale = 2.0 * sqrt(len(self.g.nodes))
             pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
@@ -161,6 +172,8 @@ class NxPlot(ShowBase):
         if cam_mouse_control:
             self._init_mouse_camera()
         else:
+            self.initial_cam_speed = initial_camera_speed
+            self.cam_zoom = self.render.getBounds().getRadius()
             self._init_keyboard_camera()
 
     def genLabelText(self, text, i, scale):
@@ -357,15 +370,45 @@ class NxPlot(ShowBase):
         return task.again
 
     def keyboardCameraTask(self, task):
-        length = self.render.getBounds().getRadius()
-        angleDegrees = task.time * self.cam_speed
-        angleRadians = angleDegrees * (pi / 180.0)
-        self.camera.setPos(
-            length * sin(angleRadians),
-            -length * cos(angleRadians),
-            0,
-        )
-        self.camera.setHpr(angleDegrees, 0, 0)
+        """handle keyboard input that spins the camera"""
+        # first adjust camera speed
+        left_button = KeyboardButton.ascii_key("a")
+        right_button = KeyboardButton.ascii_key("d")
+        up_button = KeyboardButton.ascii_key("w")
+        down_button = KeyboardButton.ascii_key("s")
+        in_button = KeyboardButton.ascii_key("i")
+        out_button = KeyboardButton.ascii_key("o")
+        is_down = self.mouseWatcherNode.is_button_down
+        _speed = 24.0
+        speed = _speed * globalClock.get_dt()
+        hdel = 0
+        delta_psi = 0
+        delta_rad = 0
+        if is_down(left_button):
+            hdel += speed * 2
+        if is_down(right_button):
+            hdel -= speed * 2
+        if is_down(up_button):
+            delta_psi += speed / 2
+        if is_down(down_button):
+            delta_psi -= speed / 2
+        if is_down(in_button):
+            delta_rad -= speed
+        if is_down(out_button):
+            delta_rad += speed
+        self.cam_zoom = max(self.cam_zoom + delta_rad, 2.5)
+        hdeg = self.camera.getH() + hdel
+        hrad = hdeg * pi / 180
+        z = min(max(self.camera.getZ() + delta_psi, -self.cam_zoom), self.cam_zoom)
+        if z == 0:
+            z = EPS
+        # psiDegrees = asin(self.camera.getZ() / self.cam_zoom) + delta_psi
+        # psiRadians = psiDegrees * pi / 180
+        x = self.cam_zoom * sin(hrad) * cos(z / self.cam_zoom)
+        y = -self.cam_zoom * cos(hrad) * cos(z / self.cam_zoom)
+        self.camera.setPos(x, y, z)
+        # p =
+        self.camera.setHpr(hdeg, 0, 0)
         return Task.cont
 
 
