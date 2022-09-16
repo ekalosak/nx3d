@@ -11,11 +11,18 @@ from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from panda3d.core import DirectionalLight, Material, NodePath, TextNode
 
-CONTROLLS = """
+KEYBOARD_CONTROLLS = """
 wasd - move camera around
 qe - zoom in and out
 r - reset
 """
+MOUSE_CONTROLLS = """
+mouse1 drag - move
+mouse2 drag - zoom
+mouse3 drag - rotate
+r - reset
+"""
+
 
 EPS = 1e-6
 
@@ -35,7 +42,7 @@ default_node = {
 }
 default_edge = {
     "filepath": Path(__file__).parent / "data/unit_cylinder_base_at_0.egg",
-    "radius": 0.2,
+    "radius": 0.75,
     "color": (0.2, 0.2, 0.2, 1),
     "text_color": (0, 1, 1, 1),
 }
@@ -85,24 +92,24 @@ class NxPlot(ShowBase):
         plot_axes=False,
         verbose=False,
         autolabel=False,
+        cam_mouse_control=False,
         node_fn=default_node["filepath"],
         edge_fn=default_edge["filepath"],
         graph_state_func: Optional[Callable[[nx.Graph], Any]] = None,
         graph_trans_frq: Optional[float] = None,
+        initial_camera_speed=24.0,
     ):
         ShowBase.__init__(self)
-        self.disableMouse()
-        self._init_gui()
 
         self.g = graph
         self.verbose = verbose
         self.graph_state_func = graph_state_func
+        self.cam_speed = initial_camera_speed
         if pos is None:
             pos_scale = 2.0 * sqrt(len(self.g.nodes))
             pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
             self.pos = pos
         if autolabel:
-            print("autolabel")
             if verbose and any([x for x in [edge_labels, node_labels]]):
                 print(
                     "overwriting node and edge labels, set autolabel to False if undesired"
@@ -129,11 +136,6 @@ class NxPlot(ShowBase):
 
         for nd in self.g.nodes:
             node_label = node_labels.get(nd)
-            # print()
-            # print()
-            # print(node_color)
-            # print(node_label_color)
-            # print()
             self._add_node(
                 nd,
                 egg_filepath=node_fn,
@@ -154,23 +156,30 @@ class NxPlot(ShowBase):
                 label_color=edge_label_color,
             )
 
-        graph_bounds = self.render.getBounds()
-        print(type(graph_bounds))
-        print(dir(graph_bounds))
-        print(graph_bounds)
-        print(graph_bounds.getVolume())
-        self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
+        self._init_gui(cam_mouse_control)
+        if cam_mouse_control:
+            self._init_mouse_camera()
+        else:
+            self._init_keyboard_camera()
 
-    def _init_gui(self, scale=0.07):
+    def _init_keyboard_camera(self):
+        self.disableMouse()
+        self.taskMgr.add(self.keyboardCameraTask, "KeyboardCameraTask")
+
+    def _init_mouse_camera(self):
+        graph_bounds = self.render.getBounds()
+        radius = graph_bounds.getRadius()
+        self.cam.setY(-radius)
+
+    def _init_gui(self, cam_mouse_control, scale=0.07):
+        help_text = MOUSE_CONTROLLS if cam_mouse_control else KEYBOARD_CONTROLLS
+        help_text = help_text.strip()
         text = TextNode("gui")
-        text.setText(CONTROLLS.strip())
-        textNodePath = render2d.attachNewNode(text)  # noqa: F821
-        textNodePath.setScale(scale)
-        textNodePath.setPos(-1, 0, -1 + scale + 0.01)
-        text.setTextColor(1, 1, 1, 1)
-        text.setCardColor(0, 0, 0, 0.2)
-        text.setCardAsMargin(0, 100, 0, 0)
-        text.setCardDecal(True)
+        text.setText(help_text)
+        textNodePath = self.render2d.attachNewNode(text)
+        textNodePath.setScale(0.07)
+        textNodePath.setPos(-1, 0, 0.9)
+        self.gui = textNodePath
 
     def _make_text(
         self, node_path: NodePath, text_id: str, label: str, color: Vec4
@@ -188,7 +197,7 @@ class NxPlot(ShowBase):
         mat.setBaseColor(color)
         node_path.setMaterial(mat, 1)
 
-    def _make_3dge(
+    def _make_graph_component(
         self,
         egg_filepath: str,
         id_str: str,
@@ -220,7 +229,7 @@ class NxPlot(ShowBase):
         label: Optional[str] = None,
         label_color: Optional[Vec4] = None,
     ):
-        edge, text = self._make_3dge(
+        edge, text = self._make_graph_component(
             egg_filepath, str(ed), scale, color, label, label_color
         )
         assert isinstance(edge, NodePath)
@@ -284,7 +293,7 @@ class NxPlot(ShowBase):
         label: Optional[str] = None,
         label_color: Optional[Vec4] = None,
     ):
-        node, text = self._make_3dge(
+        node, text = self._make_graph_component(
             egg_filepath, str(nd), scale, color, label, label_color
         )
         node.reparentTo(self.render)
@@ -312,15 +321,19 @@ class NxPlot(ShowBase):
         self.yax.setPos(0, 0, 0)
         self.yax.setP(-90)
 
-    def spinCameraTask(self, task):
-        length = 30  # how far away to be
-        speed = 24.0  # how fast to spin
-        angleDegrees = task.time * speed
+    def guiUpdateTask(self, task):
+        ...
+
+    def keyboardCameraTask(self, task):
+        length = self.render.getBounds().getRadius()
+        angleDegrees = task.time * self.cam_speed
         angleRadians = angleDegrees * (pi / 180.0)
         self.camera.setPos(
-            length * sin(angleRadians), -length * cos(angleRadians), length / 2.0
+            length * sin(angleRadians),
+            -length * cos(angleRadians),
+            0,
         )
-        self.camera.setHpr(angleDegrees, -length * 1.2, 0)
+        self.camera.setHpr(angleDegrees, 0, 0)
         return Task.cont
 
 
@@ -332,21 +345,22 @@ def plot(g: nx.Graph, debug=False, **kwargs):
 
     Args:
         g (nx.Graph): The graph you'd like to plot.
-        debug (bool): Set to debug mode, including diagnostic information printed to stdout, XYZ axes, and labels
+        debug (bool): Set to debug mode, entailing rendered and stdout debugging information, negates other debug-like args
         kwargs: Passed to main class initialization
 
     Returns:
         None
     """
     if debug:
-        for kw in ["verbose", "plot_axes", "autolabel"]:
-            kwargs[kw] = True
+        for kw in ["verbose", "plot_axes", "autolabel", "cam_mouse_control"]:
+            kwargs[kw] = not kwargs.get(kw, False)
+    # FIXME
+    kwargs["cam_mouse_control"] = 0
     app = NxPlot(g, **kwargs)
     app.run()
 
 
-def demo():
+def demo(debug=False, **kwargs):
     """Runs a demo visualization. Good for checking that your installation worked."""
     g = nx.frucht_graph()
-    # FIXME
-    plot(g, autolabel=True)
+    plot(g, debug, **kwargs)
