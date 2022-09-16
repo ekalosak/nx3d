@@ -84,15 +84,20 @@ I used `brew install python-sphinx`, see installation instructions on [www.sphin
   - initial movement is spinning at ^ radius
   - wasd around sphere with constant radius
   - no control for 3.5 sec starts spinning again
-- NX-2 P2 add arg allowing graph state transition function
-- NX-3 P3 mouse click and pull expands graph ()
+  - gui
+- NX-2 P2 implement demo with state transformation
+- NX-3 P3 mouse click and pull expands graph
 - NX-4 P3 tests
   - for the trig: add collision nodes to the ends of the edges and check that they collide with source and sink nodes
   - for the API: fizzbuzz it, check some basic content of the ShowBase returned by `plot_nx3d`
   - CI running the tests and a badge
+- NX-9 P3 press r to reset
 - NX-5 P4 heterogeneous sizes and colors
 - NX-6 P4 save video / snapshot to file
   (https://docs.panda3d.org/1.10/python/reference/direct.showbase.ShowBase?highlight=screenshot#direct.showbase.ShowBase.ShowBase.movie)
+- NX-8 P4 mouse click and drag on node pulls with stickyness on original location along node to free area and finally to
+  gravity around destination node.
+  - blocked by NX-3
 - NX-7 P5 physics like goop so when moved
   - blocked by NX-3
 
