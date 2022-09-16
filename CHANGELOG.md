@@ -1,4 +1,13 @@
 # Thurs Sep 15 2022
+22.9.4
+- initial camera controlls
+- lots of debugging features
+- lighting improvements
+- node labels implemented
+- edge labels implemented
+- camera pitch/roll still not working
+- label colors not totally working
+
 22.9.3
 - Updated with ReadTheDocs webhooks, no change in functionality but revved to push the updated README to PyPi
 
