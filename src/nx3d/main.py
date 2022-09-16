@@ -9,7 +9,7 @@ import networkx as nx
 import numpy as np
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-from panda3d.core import DirectionalLight, Material, TextNode
+from panda3d.core import DirectionalLight, Material, NodePath, TextNode
 
 EPS = 1e-6
 
@@ -22,18 +22,24 @@ default_node = Path(__file__).parent / "data/icosphere.egg"
 
 
 class NxPlot(ShowBase):
-    """This is the main class for plotting nx graphs."""
+    """This is the main class for plotting nx graphs.
+    Args:
+        graph: the graph to be plotted, currently only nx.Graph is supported.
+        pos: the position dictionary mapping nodes to (x,y,z) tuples of floats.
+    """
 
     def __init__(
         self,
         graph: nx.Graph,
         pos: Pos3,
-        node_color: Vec4,
-        node_size: Union[float, Vec3],
+        node_color: Union[Vec4, list[Vec4]],
+        node_size: Union[float, Vec3, list[float], list[Vec3]],
         node_labels: dict,
-        edge_color: Vec4,
-        edge_size: float,
+        node_label_color: Vec4,
+        edge_color: Union[Vec4, list[Vec4]],
+        edge_size: Union[float, list[float]],
         edge_labels: dict,
+        edge_label_color: Vec4,
         plot_axes=False,
         verbose=False,
         edge_fn=default_edge,
@@ -67,32 +73,87 @@ class NxPlot(ShowBase):
         for nd in self.g.nodes:
             node_label = node_labels.get(nd)
             self.add_node(
-                nd, fn=node_fn, color=node_color, scale=node_size, label=node_label
+                nd,
+                egg_filepath=node_fn,
+                color=node_color,
+                scale=node_size,
+                label=node_label,
+                label_color=node_label_color,
             )
 
         for ed in self.g.edges:
             edge_label = edge_labels.get(ed)
             self.add_edge(
-                ed, fn=edge_fn, color=edge_color, scale=edge_size, label=edge_label
+                ed,
+                egg_filepath=edge_fn,
+                color=edge_color,
+                scale=edge_size,
+                label=edge_label,
+                label_color=edge_label_color,
             )
 
         self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
 
-    def add_edge(
-        self, ed, fn: str, color: Vector, scale: float, label: Optional[str] = None
-    ):
-        edge = self.loader.loadModel(fn)
-        edge.reparentTo(self.render)
+    def _make_text(
+        self, node_path: NodePath, text_id: str, label: str, color: Vec4
+    ) -> NodePath:
+        text = TextNode(text_id)
+        text.setText(label)
+        text.setTextColor(*color)
+        tnd: NodePath = self.render.attachNewNode(text)
+        tnd.setBillboardAxis()  # face text towards camera
+        return tnd
+
+    def _set_color(self, node_path, color):
         myMaterial = Material()
         myMaterial.setShininess(5.0)
         myMaterial.setBaseColor(color)
-        edge.setMaterial(myMaterial, 1)
+        node_path.setMaterial(myMaterial, 1)
+
+    def _make_object(
+        self,
+        egg_filepath: str,
+        id_str: str,
+        scale: float = 1.0,
+        color: Optional[Vec4] = None,
+        label: Optional[str] = None,
+        label_color: Optional[Vec4] = None,
+        verbose=False,
+    ) -> tuple[NodePath, Optional[NodePath]]:
+        if verbose:
+            print(f"loading model: {egg_filepath}")
+        ob = self.loader.loadModel(egg_filepath)
+        if color:
+            self._set_color(ob, color)
+        if label:
+            text_id = f"{id_str}_text"
+            text_node = self._make_text(ob, text_id, label, label_color)
+        else:
+            text_node = None
+        return ob, text_node
+
+    def add_edge(
+        self,
+        ed,
+        egg_filepath: str,
+        color: Vector,
+        scale: float,
+        label: Optional[str] = None,
+        label_color: Optional[Vec4] = None,
+    ):
+        edge, text = self._make_object(
+            egg_filepath, str(ed), scale, color, label, label_color
+        )
+        assert isinstance(edge, NodePath)
+        assert isinstance(text, NodePath) or text is None
+        edge.reparentTo(self.render)
 
         p0, p1 = (self.pos[e] for e in ed)
         edge.setPos(*p0)
         dist = sqrt(((p0 - p1) ** 2).sum())
-        scale_ = (scale, scale, dist)
-        edge.setScale(*scale_)
+        edge.setScale(scale, scale, dist)
+        if text:
+            text.setScale(1 / scale, 1 / scale, 1 / dist)
 
         d = np.array(p1 - p0, dtype=float)
         for ix in np.argwhere(d == 0):
@@ -130,31 +191,27 @@ class NxPlot(ShowBase):
             print(f"heading {heading}")
         edge.setH(heading)
 
+        if text:
+            text.reparentTo(edge)
+
         return edge
 
     def add_node(
         self,
         nd,
-        fn: str,
+        egg_filepath: str,
         scale: Union[float, Vector],
         color: Vector,
         label: Optional[str] = None,
+        label_color: Optional[Vec4] = None,
     ):
-        node = self.loader.loadModel(fn)
+        node, text = self._make_object(
+            egg_filepath, str(nd), scale, color, label, label_color
+        )
         node.reparentTo(self.render)
-        node.setScale(scale)
+        if text:
+            text.reparentTo(node)
         node.setPos(*self.pos[nd])
-
-        myMaterial = Material()
-        myMaterial.setShininess(5.0)
-        myMaterial.setBaseColor(color)
-        node.setMaterial(myMaterial, 1)
-
-        text = TextNode(str(nd))
-        text.setText(label)
-        tnode = text.generate()
-        tnode.reparentTo(node)
-        tnode.setPos(0, 0, 1)
 
     def add_axes(self, fn):
         """put 3 cylinders in r:x:small, g:y:med, b:z:big; for debugging"""
@@ -177,8 +234,8 @@ class NxPlot(ShowBase):
         self.yax.setP(-90)
 
     def spinCameraTask(self, task):
-        length = 20  # how far away to be
-        speed = 25.0  # how fast to spin
+        length = 30  # how far away to be
+        speed = 8.0  # how fast to spin
         angleDegrees = task.time * speed
         angleRadians = angleDegrees * (pi / 180.0)
         self.camera.setPos(
@@ -220,16 +277,20 @@ def plot_nx3d(
         ShowBase: The Panda3D object that contains the (graphics) scene to be rendered
     """
     if pos is None:
-        pos = nx.spring_layout(g, dim=3, scale=3, iterations=100)
+        # pos_scale = 16
+        pos_scale = 2.0 * sqrt(len(g.nodes))
+        pos = nx.spring_layout(g, dim=3, scale=pos_scale)
     app = NxPlot(
         g,
         pos=pos,
         node_color=node_color,
         node_size=node_size,
         node_labels={nd: str(nd) for nd in g.nodes},
+        node_label_color=node_color,
         edge_color=edge_color,
         edge_size=edge_size,
         edge_labels={ed: str(ed) for ed in g.edges},
+        edge_label_color=edge_color,
         verbose=verbose,
         plot_axes=plot_axes,
     )

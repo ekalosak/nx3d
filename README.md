@@ -1,13 +1,16 @@
 # nx3d
 
-[![-missing homepage badge-](https://img.shields.io/badge/home-GitHub-blueviolet)](https://github.com/ekalosak/nx3d)
-[![-missing docs badge-](https://img.shields.io/badge/docs-ReadTheDocs-blue)](https://nx3d.readthedocs.io/en/latest/)
-[![-missing pypi badge-](https://img.shields.io/pypi/v/nx3d)](https://pypi.org/project/nx3d/)
-[![-missing build status badge-](https://img.shields.io/github/workflow/status/ekalosak/nx3d/Build%20nx3d%20and%20publish%20to%20PyPi)](https://github.com/ekalosak/nx3d/actions)
+[![-missing homepage-](https://img.shields.io/badge/home-GitHub-blueviolet)](https://github.com/ekalosak/nx3d)
+[![-missing docs-](https://img.shields.io/badge/docs-ReadTheDocs-blue)](https://nx3d.readthedocs.io/en/latest/)
+[![-missing pypi-](https://img.shields.io/pypi/v/nx3d)](https://pypi.org/project/nx3d/)
+[![-missing build status-](https://img.shields.io/github/workflow/status/ekalosak/nx3d/Build%20nx3d%20and%20publish%20to%20PyPi)](https://github.com/ekalosak/nx3d/actions)
+
+[![-missing status-](https://img.shields.io/badge/status-experimental-brightgreen)
+[![-missing downloads-](https://img.shields.io/pypi/dw/nx3d)]
 
 The missing 3D plotting functionality for the excellent `networkx` Python package.
 
-![-missing image of frucht graph-](https://raw.githubusercontent.com/ekalosak/nx3d/cf473d1dfab506ecd4044f4693c09aea0e1153ba/data/frucht.gif)
+![-missing gif of frucht graph-](https://raw.githubusercontent.com/ekalosak/nx3d/cf473d1dfab506ecd4044f4693c09aea0e1153ba/data/frucht.gif)
 
 # Installation
 In your shell:
@@ -38,7 +41,6 @@ import nx3d
 g = nx.frucht_graph()
 nx3d.plot(g)
 ```
-
 For more customization, use the `nx3d.plot_nx3d()` function.
 
 # Contribute
@@ -77,8 +79,6 @@ I used `brew install python-sphinx`, see installation instructions on [www.sphin
 
 ## Hack on some code
 - heterogeneous sizes and colors
-- node labels
-- edge labels
 - support for DiGraph and MultiDiGraph
 - tests
   - for the trig: add collision nodes to the ends of the edges and check that they collide with source and sink nodes
