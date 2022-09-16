@@ -11,6 +11,12 @@ from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from panda3d.core import DirectionalLight, Material, NodePath, TextNode
 
+CONTROLLS = """
+wasd - move camera around
+qe - zoom in and out
+r - reset
+"""
+
 EPS = 1e-6
 
 Vector = Union[list[float], tuple[float, ...]]
@@ -24,12 +30,14 @@ Pos3 = dict[Hashable, np.ndarray]
 default_node = {
     "filepath": Path(__file__).parent / "data/icosphere.egg",
     "shape": 0.45,
-    "color": (0.3, 0, 0.3, 0.2),
+    "color": (0.3, 0, 0.3, 1),
+    "text_color": (1, 1, 1, 1),
 }
 default_edge = {
     "filepath": Path(__file__).parent / "data/unit_cylinder_base_at_0.egg",
     "radius": 0.2,
-    "color": (0.2, 0.2, 0.2, 0.2),
+    "color": (0.2, 0.2, 0.2, 1),
+    "text_color": (0, 1, 1, 1),
 }
 
 
@@ -69,11 +77,11 @@ class NxPlot(ShowBase):
         node_color: Colors = default_node["color"],
         node_shape: Shapes = default_node["shape"],
         node_labels: dict = {},
-        node_label_color: Colors = default_node["color"],
+        node_label_color: Colors = default_node["text_color"],
         edge_color: Colors = default_edge["color"],
         edge_radius: Union[float, list[float]] = default_edge["radius"],
         edge_labels: dict = {},
-        edge_label_color: Colors = default_edge["color"],
+        edge_label_color: Colors = default_edge["text_color"],
         plot_axes=False,
         verbose=False,
         autolabel=False,
@@ -84,6 +92,7 @@ class NxPlot(ShowBase):
     ):
         ShowBase.__init__(self)
         self.disableMouse()
+        self._init_gui()
 
         self.g = graph
         self.verbose = verbose
@@ -93,12 +102,13 @@ class NxPlot(ShowBase):
             pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
             self.pos = pos
         if autolabel:
+            print("autolabel")
             if verbose and any([x for x in [edge_labels, node_labels]]):
                 print(
                     "overwriting node and edge labels, set autolabel to False if undesired"
                 )
-            node_labels = list(map(lambda x: str(x), self.g.nodes))
-            edge_labels = list(map(lambda x: str(x), self.g.edges))
+            node_labels = {nd: str(nd) for nd in self.g.nodes}
+            edge_labels = {ed: str(ed) for ed in self.g.edges}
 
         for v in self.pos.values():
             if len(v) != 3:
@@ -119,7 +129,12 @@ class NxPlot(ShowBase):
 
         for nd in self.g.nodes:
             node_label = node_labels.get(nd)
-            self.add_node(
+            # print()
+            # print()
+            # print(node_color)
+            # print(node_label_color)
+            # print()
+            self._add_node(
                 nd,
                 egg_filepath=node_fn,
                 color=node_color,
@@ -130,7 +145,7 @@ class NxPlot(ShowBase):
 
         for ed in self.g.edges:
             edge_label = edge_labels.get(ed)
-            self.add_edge(
+            self._add_edge(
                 ed,
                 egg_filepath=edge_fn,
                 color=edge_color,
@@ -139,25 +154,41 @@ class NxPlot(ShowBase):
                 label_color=edge_label_color,
             )
 
+        graph_bounds = self.render.getBounds()
+        print(type(graph_bounds))
+        print(dir(graph_bounds))
+        print(graph_bounds)
+        print(graph_bounds.getVolume())
         self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
+
+    def _init_gui(self, scale=0.07):
+        text = TextNode("gui")
+        text.setText(CONTROLLS.strip())
+        textNodePath = render2d.attachNewNode(text)  # noqa: F821
+        textNodePath.setScale(scale)
+        textNodePath.setPos(-1, 0, -1 + scale + 0.01)
+        text.setTextColor(1, 1, 1, 1)
+        text.setCardColor(0, 0, 0, 0.2)
+        text.setCardAsMargin(0, 100, 0, 0)
+        text.setCardDecal(True)
 
     def _make_text(
         self, node_path: NodePath, text_id: str, label: str, color: Vec4
     ) -> NodePath:
         text = TextNode(text_id)
         text.setText(label)
-        text.setTextColor(*color)
         tnd: NodePath = self.render.attachNewNode(text)
         tnd.setBillboardAxis()  # face text towards camera
+        self._set_color(tnd, color)
         return tnd
 
     def _set_color(self, node_path, color):
-        myMaterial = Material()
-        myMaterial.setShininess(5.0)
-        myMaterial.setBaseColor(color)
-        node_path.setMaterial(myMaterial, 1)
+        mat = Material()
+        mat.setShininess(5.0)
+        mat.setBaseColor(color)
+        node_path.setMaterial(mat, 1)
 
-    def _make_object(
+    def _make_3dge(
         self,
         egg_filepath: str,
         id_str: str,
@@ -167,6 +198,7 @@ class NxPlot(ShowBase):
         label_color: Optional[Vec4] = None,
         verbose=False,
     ) -> tuple[NodePath, Optional[NodePath]]:
+        """construct a 3D graph element representing (edge, edge_label) or (node, node_label)"""
         if verbose:
             print(f"loading model: {egg_filepath}")
         ob = self.loader.loadModel(egg_filepath)
@@ -179,7 +211,7 @@ class NxPlot(ShowBase):
             text_node = None
         return ob, text_node
 
-    def add_edge(
+    def _add_edge(
         self,
         ed,
         egg_filepath: str,
@@ -188,7 +220,7 @@ class NxPlot(ShowBase):
         label: Optional[str] = None,
         label_color: Optional[Vec4] = None,
     ):
-        edge, text = self._make_object(
+        edge, text = self._make_3dge(
             egg_filepath, str(ed), scale, color, label, label_color
         )
         assert isinstance(edge, NodePath)
@@ -243,7 +275,7 @@ class NxPlot(ShowBase):
 
         return edge
 
-    def add_node(
+    def _add_node(
         self,
         nd,
         egg_filepath: str,
@@ -252,7 +284,7 @@ class NxPlot(ShowBase):
         label: Optional[str] = None,
         label_color: Optional[Vec4] = None,
     ):
-        node, text = self._make_object(
+        node, text = self._make_3dge(
             egg_filepath, str(nd), scale, color, label, label_color
         )
         node.reparentTo(self.render)
@@ -292,7 +324,7 @@ class NxPlot(ShowBase):
         return Task.cont
 
 
-def plot(g: nx.Graph, debug=False, *args, **kwargs):
+def plot(g: nx.Graph, debug=False, **kwargs):
     """Plot my graph now!
 
     This is where you should start. Calling this function on your graph will cause a pop-up
@@ -301,11 +333,15 @@ def plot(g: nx.Graph, debug=False, *args, **kwargs):
     Args:
         g (nx.Graph): The graph you'd like to plot.
         debug (bool): Set to debug mode, including diagnostic information printed to stdout, XYZ axes, and labels
+        kwargs: Passed to main class initialization
 
     Returns:
         None
     """
-    app = NxPlot(g, verbose=debug, plot_axes=debug, autolabel=debug)
+    if debug:
+        for kw in ["verbose", "plot_axes", "autolabel"]:
+            kwargs[kw] = True
+    app = NxPlot(g, **kwargs)
     app.run()
 
 
@@ -313,4 +349,4 @@ def demo():
     """Runs a demo visualization. Good for checking that your installation worked."""
     g = nx.frucht_graph()
     # FIXME
-    plot(g, autolabel=1)
+    plot(g, autolabel=True)
