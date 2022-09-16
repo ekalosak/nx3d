@@ -3,7 +3,7 @@
 
 from math import cos, pi, sin, sqrt
 from pathlib import Path
-from typing import Hashable, Optional, Union
+from typing import Any, Callable, Hashable, Optional, Union
 
 import networkx as nx
 import numpy as np
@@ -16,42 +16,89 @@ EPS = 1e-6
 Vector = Union[list[float], tuple[float, ...]]
 Vec3 = tuple[float, float, float]
 Vec4 = tuple[float, float, float, float]
+Colors = Union[Vec4, list[Vec4]]
+Shapes = Union[float, Vec3, list[float], list[Vec3]]
 Pos3 = dict[Hashable, np.ndarray]
-default_edge = Path(__file__).parent / "data/unit_cylinder_base_at_0.egg"
-default_node = Path(__file__).parent / "data/icosphere.egg"
+
+# NOTE using dict for default node rather than dataclass because @dataclass(kw_only) is 3.10, want to support 3.9
+default_node = {
+    "filepath": Path(__file__).parent / "data/icosphere.egg",
+    "shape": 0.45,
+    "color": (0.3, 0, 0.3, 0.2),
+}
+default_edge = {
+    "filepath": Path(__file__).parent / "data/unit_cylinder_base_at_0.egg",
+    "radius": 0.2,
+    "color": (0.2, 0.2, 0.2, 0.2),
+}
 
 
 class NxPlot(ShowBase):
-    """This is the main class for plotting nx graphs.
+    """The main class for plotting networkx graphs using panda3d.
+
+    NxPlot is a panda3d object capable of rendering the nx.Graph.
+    Use the object as follows:
+
+    g = nx.frucht_graph();
+    app = NxPlot(g);
+    app.run();
+
     Args:
-        graph: the graph to be plotted, currently only nx.Graph is supported.
-        pos: the position dictionary mapping nodes to (x,y,z) tuples of floats.
+        g: The graph you'd like to plot.
+        pos: Positions of the nodes in the graph. If None, spring_layout will be used.
+        node_color: RGBA color for the nodes. Currently homogeneous colors only suppported.
+        node_shape: Shapes of the nodes, either radius or XYZ dimensions, singular or plural.
+        node_labels: Map from the graph's nodes to string labels.
+        edge_color: RGBA color for the edges. Currently homogeneous colors only suppported.
+        edge_radius: Radius of the edges, singular or plural.
+        edge_labels: Map from the graph's edges to string labels.
+        plot_axes: Show the XYZ axes in the 3D scene
+        verbose: Print diagnostic information to stdout.
+        autolabel: Use the string representation of the nx.Graphs' nodes and edges as labels.
+        graph_state_func: This function will be called every <state_trans_freq> seconds to update the internal nx.Graph.
+        state_trans_freq: How often, in seconds, to apply the graph_state_func.
+
+    Returns:
+        ShowBase: The Panda3D object capable of rendering the graph
     """
 
     def __init__(
         self,
         graph: nx.Graph,
-        pos: Pos3,
-        node_color: Union[Vec4, list[Vec4]],
-        node_size: Union[float, Vec3, list[float], list[Vec3]],
-        node_labels: dict,
-        node_label_color: Vec4,
-        edge_color: Union[Vec4, list[Vec4]],
-        edge_size: Union[float, list[float]],
-        edge_labels: dict,
-        edge_label_color: Vec4,
+        pos: Optional[Pos3] = None,
+        node_color: Colors = default_node["color"],
+        node_shape: Shapes = default_node["shape"],
+        node_labels: dict = {},
+        node_label_color: Colors = default_node["color"],
+        edge_color: Colors = default_edge["color"],
+        edge_radius: Union[float, list[float]] = default_edge["radius"],
+        edge_labels: dict = {},
+        edge_label_color: Colors = default_edge["color"],
         plot_axes=False,
         verbose=False,
-        edge_fn=default_edge,
-        node_fn=default_node,
-        pos_update_function=None,
+        autolabel=False,
+        node_fn=default_node["filepath"],
+        edge_fn=default_edge["filepath"],
+        graph_state_func: Optional[Callable[[nx.Graph], Any]] = None,
+        graph_trans_frq: Optional[float] = None,
     ):
         ShowBase.__init__(self)
         self.disableMouse()
+
         self.g = graph
         self.verbose = verbose
-        self.pos = pos
-        self.pos_update_function = pos_update_function
+        self.graph_state_func = graph_state_func
+        if pos is None:
+            pos_scale = 2.0 * sqrt(len(self.g.nodes))
+            pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
+            self.pos = pos
+        if autolabel:
+            if verbose and any([x for x in [edge_labels, node_labels]]):
+                print(
+                    "overwriting node and edge labels, set autolabel to False if undesired"
+                )
+            node_labels = list(map(lambda x: str(x), self.g.nodes))
+            edge_labels = list(map(lambda x: str(x), self.g.edges))
 
         for v in self.pos.values():
             if len(v) != 3:
@@ -63,12 +110,12 @@ class NxPlot(ShowBase):
         if plot_axes:
             self.add_axes(edge_fn)
 
-        # add some lights TODO be thouhtful about lighting the scene
-        for hpr in [(0, 0, 0), (90, 0, 90), (0, 90, -90)]:
+        # add some lights
+        for hpr in [(0, 0, 0), (0, 0, 180), (180, 180, 180), (180, 0, 180)]:
             dlight = DirectionalLight(f"my dlight {hpr}")
             dlnp = self.render.attachNewNode(dlight)
-            dlnp.setHpr(*hpr)
             self.render.setLight(dlnp)
+            dlnp.setHpr(*hpr)
 
         for nd in self.g.nodes:
             node_label = node_labels.get(nd)
@@ -76,7 +123,7 @@ class NxPlot(ShowBase):
                 nd,
                 egg_filepath=node_fn,
                 color=node_color,
-                scale=node_size,
+                scale=node_shape,
                 label=node_label,
                 label_color=node_label_color,
             )
@@ -87,7 +134,7 @@ class NxPlot(ShowBase):
                 ed,
                 egg_filepath=edge_fn,
                 color=edge_color,
-                scale=edge_size,
+                scale=edge_radius,
                 label=edge_label,
                 label_color=edge_label_color,
             )
@@ -235,7 +282,7 @@ class NxPlot(ShowBase):
 
     def spinCameraTask(self, task):
         length = 30  # how far away to be
-        speed = 8.0  # how fast to spin
+        speed = 24.0  # how fast to spin
         angleDegrees = task.time * speed
         angleRadians = angleDegrees * (pi / 180.0)
         self.camera.setPos(
@@ -245,59 +292,7 @@ class NxPlot(ShowBase):
         return Task.cont
 
 
-def plot_nx3d(
-    g: nx.Graph,
-    pos: Optional[Pos3] = None,
-    node_color: Vec4 = (0.35, 0, 1, 1),
-    node_size: Union[float, Vec3] = 0.65,
-    edge_color: Vec4 = (0.2, 0.2, 0.2, 1),
-    edge_size: float = 1.0,
-    verbose=False,
-    plot_axes=False,
-):
-    """Produce a panda3d object capable of rendering the nx.Graph.
-
-    Use the return object as follows:
-
-    g = nx.grid_2d_graph(16)
-    my_app = plot_nx3d(g)
-    my_app.run()
-
-    Args:
-        g: The graph you'd like to plot.
-        pos: Positions of the nodes in the graph. If None, spring_layout will be used.
-        node_color: RGBA color for the nodes. Currently homogeneous colors only suppported.
-        node_size: Size of the nodes, either radius or XYZ dimensions.
-        edge_color: RGBA color for the edges. Currently homogeneous colors only suppported.
-        edge_size: Radius of the edges.
-        verbose: Print diagnostic information to stdout.
-        plot_axes: Show the XYZ axes in the 3D scene
-
-    Returns:
-        ShowBase: The Panda3D object that contains the (graphics) scene to be rendered
-    """
-    if pos is None:
-        # pos_scale = 16
-        pos_scale = 2.0 * sqrt(len(g.nodes))
-        pos = nx.spring_layout(g, dim=3, scale=pos_scale)
-    app = NxPlot(
-        g,
-        pos=pos,
-        node_color=node_color,
-        node_size=node_size,
-        node_labels={nd: str(nd) for nd in g.nodes},
-        node_label_color=node_color,
-        edge_color=edge_color,
-        edge_size=edge_size,
-        edge_labels={ed: str(ed) for ed in g.edges},
-        edge_label_color=edge_color,
-        verbose=verbose,
-        plot_axes=plot_axes,
-    )
-    return app
-
-
-def plot(g: nx.Graph, debug=False):
+def plot(g: nx.Graph, debug=False, *args, **kwargs):
     """Plot my graph now!
 
     This is where you should start. Calling this function on your graph will cause a pop-up
@@ -305,16 +300,17 @@ def plot(g: nx.Graph, debug=False):
 
     Args:
         g (nx.Graph): The graph you'd like to plot.
-        debug (bool): Set to debug mode, including diagnostic information printed to stdout and XYZ axes
+        debug (bool): Set to debug mode, including diagnostic information printed to stdout, XYZ axes, and labels
 
     Returns:
         None
     """
-    app = plot_nx3d(g, verbose=debug, plot_axes=debug)
+    app = NxPlot(g, verbose=debug, plot_axes=debug, autolabel=debug)
     app.run()
 
 
 def demo():
     """Runs a demo visualization. Good for checking that your installation worked."""
     g = nx.frucht_graph()
-    plot(g, debug=0)
+    # FIXME
+    plot(g, autolabel=1)

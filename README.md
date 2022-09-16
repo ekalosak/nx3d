@@ -41,7 +41,7 @@ import nx3d
 g = nx.frucht_graph()
 nx3d.plot(g)
 ```
-For more customization, use the `nx3d.plot_nx3d()` function.
+For more customization, read the docs.
 
 # Contribute
 Thank you for considering contributing to `nx3d`.
@@ -78,19 +78,17 @@ pre-commit run -a
 I used `brew install python-sphinx`, see installation instructions on [www.sphinx-doc.org](https://www.sphinx-doc.org/en/master/usage/installation.html).
 
 ## Hack on some code
-- heterogeneous sizes and colors
-- support for DiGraph and MultiDiGraph
-- tests
+- P0 interactive camera controls
+- P1 support for DiGraph and MultiDiGraph
+- P2 GUI with controlls in text
+- P2 add arg allowing graph state transition function
+- P2 refactor: remove plot_nx3d function - just use NxPlot class.
+- P3 tests
   - for the trig: add collision nodes to the ends of the edges and check that they collide with source and sink nodes
   - for the API: fizzbuzz it, check some basic content of the ShowBase returned by `plot_nx3d`
   - CI running the tests and a badge
-- interactive camera controls
-- animation control via callbacks
-  - position\_cbk: time -> new positions
-  - color\_cbk: time -> new colors
-  - edge\_cbk: time -> add or remove edges
-  - node\_cbk: time -> add or remove nodes
-- save video / snapshot to file
+- P4 heterogeneous sizes and colors
+- P4 save video / snapshot to file
   (https://docs.panda3d.org/1.10/python/reference/direct.showbase.ShowBase?highlight=screenshot#direct.showbase.ShowBase.ShowBase.movie)
 
 ## Open a PR
