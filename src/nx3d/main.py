@@ -7,6 +7,7 @@ from typing import Any, Callable, Hashable, Optional, Union
 
 import networkx as nx
 import numpy as np
+from direct.gui.OnscreenText import OnscreenText
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from panda3d.core import DirectionalLight, Material, NodePath, TextNode
@@ -162,6 +163,18 @@ class NxPlot(ShowBase):
         else:
             self._init_keyboard_camera()
 
+    def genLabelText(self, text, i, scale):
+        """https://github.com/panda3d/panda3d/blob/master/samples/asteroids/main.py#L86"""
+        return OnscreenText(
+            text=text,
+            parent=self.a2dTopLeft,
+            pos=(scale, -0.06 * i - 0.1),
+            fg=(1, 1, 1, 1),
+            align=TextNode.ALeft,
+            shadow=(0, 0, 0, 0.5),
+            scale=scale,
+        )
+
     def _init_keyboard_camera(self):
         self.disableMouse()
         self.taskMgr.add(self.keyboardCameraTask, "KeyboardCameraTask")
@@ -174,12 +187,12 @@ class NxPlot(ShowBase):
     def _init_gui(self, cam_mouse_control, scale=0.07):
         help_text = MOUSE_CONTROLLS if cam_mouse_control else KEYBOARD_CONTROLLS
         help_text = help_text.strip()
-        text = TextNode("gui")
-        text.setText(help_text)
-        textNodePath = self.render2d.attachNewNode(text)
-        textNodePath.setScale(0.07)
-        textNodePath.setPos(-1, 0, 0.9)
-        self.gui = textNodePath
+        self.gui_fixed_lines = []
+        self.gui_updatable_lines = {}
+        for i, line in enumerate(help_text.split("\n")):
+            label = self.genLabelText(line, i, scale)
+            self.gui_fixed_lines.append(label)
+        self.taskMgr.doMethodLater(1, self.guiUpdateTask, "GuiUpdate")
 
     def _make_text(
         self, node_path: NodePath, text_id: str, label: str, color: Vec4
@@ -322,7 +335,26 @@ class NxPlot(ShowBase):
         self.yax.setP(-90)
 
     def guiUpdateTask(self, task):
-        ...
+        """write diagnostic info to gui"""
+        rot = "camera rotation: "
+        pos = "camera position: "
+        rot_ = rot + str(self.camera.getHpr())
+        pos_ = pos + str(self.camera.getPos())
+
+        if self.verbose:
+            if rot not in self.gui_updatable_lines:
+                self.gui_updatable_lines[rot] = self.genLabelText(
+                    rot_, len(self.gui_fixed_lines), 0.07
+                )
+            else:
+                self.gui_updatable_lines[rot].setText(rot_)
+            if pos not in self.gui_updatable_lines:
+                self.gui_updatable_lines[pos] = self.genLabelText(
+                    pos_, len(self.gui_fixed_lines) + 1, 0.07
+                )
+            else:
+                self.gui_updatable_lines[pos].setText(pos_)
+        return task.again
 
     def keyboardCameraTask(self, task):
         length = self.render.getBounds().getRadius()

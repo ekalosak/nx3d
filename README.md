@@ -100,6 +100,7 @@ I used `brew install python-sphinx`, see installation instructions on [www.sphin
   - blocked by NX-3
 - NX-7 P5 physics like goop so when moved
   - blocked by NX-3
+- NX-10 P5 enable 'peek' with camera by shifting lense with u, i
 
 ## Open a PR
 - fork this repo
