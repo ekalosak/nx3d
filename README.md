@@ -41,7 +41,7 @@ import nx3d
 g = nx.frucht_graph()
 nx3d.plot(g)
 ```
-For more customization, read the docs.
+For more customization, use the `nx3d.plot_nx3d()` function.
 
 # Contribute
 Thank you for considering contributing to `nx3d`.
@@ -78,18 +78,23 @@ pre-commit run -a
 I used `brew install python-sphinx`, see installation instructions on [www.sphinx-doc.org](https://www.sphinx-doc.org/en/master/usage/installation.html).
 
 ## Hack on some code
-- P0 interactive camera controls
-- P1 support for DiGraph and MultiDiGraph
-- P2 GUI with controlls in text
-- P2 add arg allowing graph state transition function
-- P2 refactor: remove plot_nx3d function - just use NxPlot class.
-- P3 tests
+- NX-0 P2 support for DiGraph and MultiDiGraph
+- NX-1 P2 better default camera behavior
+  - set initial position to capture full graph
+  - initial movement is spinning at ^ radius
+  - wasd around sphere with constant radius
+  - no control for 3.5 sec starts spinning again
+- NX-2 P2 add arg allowing graph state transition function
+- NX-3 P3 mouse click and pull expands graph ()
+- NX-4 P3 tests
   - for the trig: add collision nodes to the ends of the edges and check that they collide with source and sink nodes
   - for the API: fizzbuzz it, check some basic content of the ShowBase returned by `plot_nx3d`
   - CI running the tests and a badge
-- P4 heterogeneous sizes and colors
-- P4 save video / snapshot to file
+- NX-5 P4 heterogeneous sizes and colors
+- NX-6 P4 save video / snapshot to file
   (https://docs.panda3d.org/1.10/python/reference/direct.showbase.ShowBase?highlight=screenshot#direct.showbase.ShowBase.ShowBase.movie)
+- NX-7 P5 physics like goop so when moved
+  - blocked by NX-3
 
 ## Open a PR
 - fork this repo
