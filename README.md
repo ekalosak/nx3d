@@ -86,6 +86,10 @@ I used `brew install python-sphinx`, see installation instructions on [www.sphin
   - CI running the tests and a badge
 - interactive camera controls
 - animation control via callbacks
+  - position\_cbk: time -> new positions
+  - color\_cbk: time -> new colors
+  - edge\_cbk: time -> add or remove edges
+  - node\_cbk: time -> add or remove nodes
 - save video / snapshot to file
   (https://docs.panda3d.org/1.10/python/reference/direct.showbase.ShowBase?highlight=screenshot#direct.showbase.ShowBase.ShowBase.movie)
 

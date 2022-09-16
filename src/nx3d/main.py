@@ -9,7 +9,7 @@ import networkx as nx
 import numpy as np
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-from panda3d.core import DirectionalLight, Material
+from panda3d.core import DirectionalLight, Material, TextNode
 
 EPS = 1e-6
 
@@ -22,10 +22,7 @@ default_node = Path(__file__).parent / "data/icosphere.egg"
 
 
 class NxPlot(ShowBase):
-    """This is the main class for plotting nx graphs. You should use the convenience functions that wrap this class for
-    best results. The purpose of this Python package is to help you avoid having to deal directly with Panda3D, and
-    using this class directly voids that.
-    """
+    """This is the main class for plotting nx graphs."""
 
     def __init__(
         self,
@@ -33,44 +30,57 @@ class NxPlot(ShowBase):
         pos: Pos3,
         node_color: Vec4,
         node_size: Union[float, Vec3],
+        node_labels: dict,
         edge_color: Vec4,
         edge_size: float,
+        edge_labels: dict,
         plot_axes=False,
         verbose=False,
         edge_fn=default_edge,
         node_fn=default_node,
+        pos_update_function=None,
     ):
         ShowBase.__init__(self)
         self.disableMouse()
         self.g = graph
         self.verbose = verbose
+        self.pos = pos
+        self.pos_update_function = pos_update_function
 
-        if plot_axes:
-            self.add_axes(edge_fn)
-
-        for v in pos.values():
+        for v in self.pos.values():
             if len(v) != 3:
                 raise ValueError(
                     "Positions must be 3-dimensional."
                     " Try using the `dim=3` kwarg for computing positions from networkx layout functions."
                 )
-        self.pos = pos
 
+        if plot_axes:
+            self.add_axes(edge_fn)
+
+        # add some lights TODO be thouhtful about lighting the scene
         for hpr in [(0, 0, 0), (90, 0, 90), (0, 90, -90)]:
             dlight = DirectionalLight(f"my dlight {hpr}")
             dlnp = self.render.attachNewNode(dlight)
             dlnp.setHpr(*hpr)
             self.render.setLight(dlnp)
 
-        for nd in self.g:
-            self.add_node(nd, fn=node_fn, color=node_color, scale=node_size)
+        for nd in self.g.nodes:
+            node_label = node_labels.get(nd)
+            self.add_node(
+                nd, fn=node_fn, color=node_color, scale=node_size, label=node_label
+            )
 
         for ed in self.g.edges:
-            self.add_edge(ed, fn=edge_fn, color=edge_color, scale=edge_size)
+            edge_label = edge_labels.get(ed)
+            self.add_edge(
+                ed, fn=edge_fn, color=edge_color, scale=edge_size, label=edge_label
+            )
 
         self.taskMgr.add(self.spinCameraTask, "SpinCameraTask")
 
-    def add_edge(self, ed, fn: str, color: Vector, scale: float):
+    def add_edge(
+        self, ed, fn: str, color: Vector, scale: float, label: Optional[str] = None
+    ):
         edge = self.loader.loadModel(fn)
         edge.reparentTo(self.render)
         myMaterial = Material()
@@ -128,6 +138,7 @@ class NxPlot(ShowBase):
         fn: str,
         scale: Union[float, Vector],
         color: Vector,
+        label: Optional[str] = None,
     ):
         node = self.loader.loadModel(fn)
         node.reparentTo(self.render)
@@ -138,6 +149,12 @@ class NxPlot(ShowBase):
         myMaterial.setShininess(5.0)
         myMaterial.setBaseColor(color)
         node.setMaterial(myMaterial, 1)
+
+        text = TextNode(str(nd))
+        text.setText(label)
+        tnode = text.generate()
+        tnode.reparentTo(node)
+        tnode.setPos(0, 0, 1)
 
     def add_axes(self, fn):
         """put 3 cylinders in r:x:small, g:y:med, b:z:big; for debugging"""
@@ -184,11 +201,10 @@ def plot_nx3d(
     """Produce a panda3d object capable of rendering the nx.Graph.
 
     Use the return object as follows:
-    .. highlight:: python
-    .. code-block:: python
 
-        my_app = plot_nx3d(...)
-        my_app.run()
+    g = nx.grid_2d_graph(16)
+    my_app = plot_nx3d(g)
+    my_app.run()
 
     Args:
         g: The graph you'd like to plot.
@@ -210,8 +226,10 @@ def plot_nx3d(
         pos=pos,
         node_color=node_color,
         node_size=node_size,
+        node_labels={nd: str(nd) for nd in g.nodes},
         edge_color=edge_color,
         edge_size=edge_size,
+        edge_labels={ed: str(ed) for ed in g.edges},
         verbose=verbose,
         plot_axes=plot_axes,
     )
