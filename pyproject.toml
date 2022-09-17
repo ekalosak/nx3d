@@ -7,7 +7,7 @@ nx3d = "nx3d.__main__:main"
 
 [tool.poetry]
 name = "nx3d"
-version = "22.9.4"
+version = "22.9.5"
 description = "The missing 3D plotting functionality for networkx"
 authors = ["Eric Kalosa-Kenyon <helloateric@gmail.com>"]
 readme = "README.md"

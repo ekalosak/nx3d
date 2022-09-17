@@ -1,4 +1,7 @@
 # Sat Sep 17 2022
+22.9.5
+- revved version to propagate README fix, essentially a no-op
+
 22.9.4
 - BREAKING CHANGE: removed plot_nx3d in favor of using the NxPlot class directly
 - implemented keyboard and mouse camera controlls
