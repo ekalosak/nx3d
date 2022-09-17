@@ -5,8 +5,8 @@
 [![-missing pypi-](https://img.shields.io/pypi/v/nx3d)](https://pypi.org/project/nx3d/)
 [![-missing build status-](https://img.shields.io/github/workflow/status/ekalosak/nx3d/Build%20nx3d%20and%20publish%20to%20PyPi)](https://github.com/ekalosak/nx3d/actions)
 
-[![-missing status-](https://img.shields.io/badge/status-experimental-brightgreen)
-[![-missing downloads-](https://img.shields.io/pypi/dw/nx3d)]
+[-missing project maturity-](https://img.shields.io/badge/status-experimental-brightgreen)
+[-missing download count-](https://img.shields.io/pypi/dw/nx3d)
 
 The missing 3D plotting functionality for the excellent `networkx` Python package.
 
@@ -79,10 +79,7 @@ I used `brew install python-sphinx`, see installation instructions on [www.sphin
 
 ## Hack on some code
 - NX-0 P0 support for DiGraph and MultiDiGraph
-- NX-1 P2 better default camera behavior
-  - set initial position to capture full graph
-  - wasd around sphere with constant radius
-  - gui
+- NX-17 P1 debug node and edge labels
 - NX-2 P2 implement demo with state transformation
 - NX-11 P3 allow plotting features to be controlled uisng graph attributes e.g. `g.nodes[nd]['color']`
 - NX-3 P3 mouse click and pull expands graph; probably requires generating the panda3d body for the graph

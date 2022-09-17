@@ -1,13 +1,16 @@
-# Thurs Sep 15 2022
+# Sat Sep 17 2022
 22.9.4
-- initial camera controlls
-- lots of debugging features
+- BREAKING CHANGE: removed plot_nx3d in favor of using the NxPlot class directly
+- implemented keyboard and mouse camera controlls
+- implemented GUI
+- implemented undocumented but tiny CLI
+- added lots of debugging features
 - lighting improvements
-- node labels implemented
-- edge labels implemented
-- camera pitch/roll still not working
-- label colors not totally working
+- node labels implemented, buggy
+- edge labels implemented, buggy
+- label colors implemented, buggy
 
+# Thurs Sep 15 2022
 22.9.3
 - Updated with ReadTheDocs webhooks, no change in functionality but revved to push the updated README to PyPi
 
