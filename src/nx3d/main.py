@@ -1,14 +1,13 @@
 """ This source provides functionality for plotting nodes and edges of nx.Graph objects in 3D.
 """
 
-from math import asin, cos, pi, sin, sqrt
+from math import cos, isclose, pi, sin, sqrt
 from pathlib import Path
 from typing import Any, Callable, Hashable, Optional, Union
 
 import networkx as nx
 import numpy as np
 from direct.gui.OnscreenText import OnscreenText
-from direct.showbase.DirectObject import DirectObject
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
 from panda3d.core import DirectionalLight, KeyboardButton, Material, NodePath, TextNode
@@ -47,17 +46,11 @@ default_edge = {
     "color": (0.2, 0.2, 0.2, 1),
     "text_color": (0, 1, 1, 1),
 }
-
-
-class Hello(DirectObject):
-    def __init__(self):
-        self.accept("mouse1", self.printHello)
-
-    def printHello(self):
-        print("Hello!")
-
-
-h = Hello()
+default_speed = {
+    "theta": 48.0,
+    "phi": 48.0,
+    "radius": 18.0,
+}
 
 
 class NxPlot(ShowBase):
@@ -84,7 +77,6 @@ class NxPlot(ShowBase):
         autolabel: Use the string representation of the nx.Graphs' nodes and edges as labels.
         graph_state_func: This function will be called every <state_trans_freq> seconds to update the internal nx.Graph.
         state_trans_freq: How often, in seconds, to apply the graph_state_func.
-        initial_camera_speed: List of length 2 having theta and phi angle speeds in degrees per second
 
     Returns:
         ShowBase: The Panda3D object capable of rendering the graph
@@ -110,7 +102,6 @@ class NxPlot(ShowBase):
         edge_fn=default_edge["filepath"],
         graph_state_func: Optional[Callable[[nx.Graph], Any]] = None,
         graph_trans_frq: Optional[float] = None,
-        initial_camera_speed=[24.0, 10.0],
     ):
         ShowBase.__init__(self)
 
@@ -168,21 +159,18 @@ class NxPlot(ShowBase):
                 label_color=edge_label_color,
             )
 
+        self.initial_camera_radius = self.render.getBounds().getRadius() * 3.5
         self._init_gui(cam_mouse_control)
-        if cam_mouse_control:
-            self._init_mouse_camera()
-        else:
-            self.initial_cam_speed = initial_camera_speed
-            self.cam_zoom = self.render.getBounds().getRadius()
+        if not cam_mouse_control:
             self._init_keyboard_camera()
 
-    def genLabelText(self, text, i, scale):
+    def genLabelText(self, text, i, scale=0.07, color=(1, 1, 1, 1)):
         """https://github.com/panda3d/panda3d/blob/master/samples/asteroids/main.py#L86"""
         return OnscreenText(
             text=text,
             parent=self.a2dTopLeft,
             pos=(scale, -0.06 * i - 0.1),
-            fg=(1, 1, 1, 1),
+            fg=color,
             align=TextNode.ALeft,
             shadow=(0, 0, 0, 0.5),
             scale=scale,
@@ -190,12 +178,10 @@ class NxPlot(ShowBase):
 
     def _init_keyboard_camera(self):
         self.disableMouse()
+        self.cam_radius = self.initial_camera_radius
+        self.cam_theta = 0.0
+        self.cam_phi = 0.0
         self.taskMgr.add(self.keyboardCameraTask, "KeyboardCameraTask")
-
-    def _init_mouse_camera(self):
-        graph_bounds = self.render.getBounds()
-        radius = graph_bounds.getRadius()
-        self.cam.setY(-radius)
 
     def _init_gui(self, cam_mouse_control, scale=0.07):
         help_text = MOUSE_CONTROLLS if cam_mouse_control else KEYBOARD_CONTROLLS
@@ -203,9 +189,9 @@ class NxPlot(ShowBase):
         self.gui_fixed_lines = []
         self.gui_updatable_lines = {}
         for i, line in enumerate(help_text.split("\n")):
-            label = self.genLabelText(line, i, scale)
+            label = self.genLabelText(line, i, scale, color=(1, 1, 0, 1))
             self.gui_fixed_lines.append(label)
-        self.taskMgr.doMethodLater(1, self.guiUpdateTask, "GuiUpdate")
+        self.taskMgr.doMethodLater(0.1, self.guiUpdateTask, "GuiUpdate")
 
     def _make_text(
         self, node_path: NodePath, text_id: str, label: str, color: Vec4
@@ -261,18 +247,15 @@ class NxPlot(ShowBase):
         assert isinstance(edge, NodePath)
         assert isinstance(text, NodePath) or text is None
         edge.reparentTo(self.render)
-
         p0, p1 = (self.pos[e] for e in ed)
         edge.setPos(*p0)
         dist = sqrt(((p0 - p1) ** 2).sum())
         edge.setScale(scale, scale, dist)
         if text:
             text.setScale(1 / scale, 1 / scale, 1 / dist)
-
         d = np.array(p1 - p0, dtype=float)
         for ix in np.argwhere(d == 0):
             d[ix] = EPS
-
         if self.verbose:
             print()
             print(f"color {color}")
@@ -280,7 +263,6 @@ class NxPlot(ShowBase):
             print(f"p1 {p1}")
             print(f"p1 - p0 {d}")
             print(f"dist {dist}")
-
         # FIRST pitch
         # The pitch rotates the Z-axis-aligned cylinder so that the far end of the cylinder is XY-coplanar with the
         # target node. The triangle is that having a height of d[2] and a hypotenuse of dist. Setting the height to d[2]
@@ -295,7 +277,6 @@ class NxPlot(ShowBase):
         if self.verbose:
             print(f"pitch {pitch}")
         edge.setP(pitch)
-
         # SECOND heading
         # The heading rotates the cylinder end along an arc embedded in the XY plane at z=p1[2]. The angle is that of
         # the XY projected triangle formed by p0 and p1.
@@ -304,10 +285,8 @@ class NxPlot(ShowBase):
         if self.verbose:
             print(f"heading {heading}")
         edge.setH(heading)
-
         if text:
             text.reparentTo(edge)
-
         return edge
 
     def _add_node(
@@ -353,20 +332,18 @@ class NxPlot(ShowBase):
         pos = "camera position: "
         rot_ = rot + str(self.camera.getHpr())
         pos_ = pos + str(self.camera.getPos())
-
-        if self.verbose:
-            if rot not in self.gui_updatable_lines:
-                self.gui_updatable_lines[rot] = self.genLabelText(
-                    rot_, len(self.gui_fixed_lines), 0.07
-                )
-            else:
-                self.gui_updatable_lines[rot].setText(rot_)
-            if pos not in self.gui_updatable_lines:
-                self.gui_updatable_lines[pos] = self.genLabelText(
-                    pos_, len(self.gui_fixed_lines) + 1, 0.07
-                )
-            else:
-                self.gui_updatable_lines[pos].setText(pos_)
+        if rot not in self.gui_updatable_lines:
+            self.gui_updatable_lines[rot] = self.genLabelText(
+                rot_, len(self.gui_fixed_lines), 0.07
+            )
+        else:
+            self.gui_updatable_lines[rot].setText(rot_)
+        if pos not in self.gui_updatable_lines:
+            self.gui_updatable_lines[pos] = self.genLabelText(
+                pos_, len(self.gui_fixed_lines) + 1, 0.07
+            )
+        else:
+            self.gui_updatable_lines[pos].setText(pos_)
         return task.again
 
     def keyboardCameraTask(self, task):
@@ -379,36 +356,45 @@ class NxPlot(ShowBase):
         in_button = KeyboardButton.ascii_key("i")
         out_button = KeyboardButton.ascii_key("o")
         is_down = self.mouseWatcherNode.is_button_down
-        _speed = 24.0
-        speed = _speed * globalClock.get_dt()
-        hdel = 0
-        delta_psi = 0
+        dt = globalClock.get_dt()  # noqa: F821
+        speed_rad = default_speed["radius"]
+        speed_phi = default_speed["phi"]
+        speed_theta = default_speed["theta"]
         delta_rad = 0
+        delta_phi = 0
+        delta_theta = 0
         if is_down(left_button):
-            hdel += speed * 2
+            delta_theta += speed_theta * dt
         if is_down(right_button):
-            hdel -= speed * 2
+            delta_theta -= speed_theta * dt
         if is_down(up_button):
-            delta_psi += speed / 2
+            delta_phi += speed_phi * dt
         if is_down(down_button):
-            delta_psi -= speed / 2
+            delta_phi -= speed_phi * dt
         if is_down(in_button):
-            delta_rad -= speed
+            delta_rad -= speed_rad * dt
         if is_down(out_button):
-            delta_rad += speed
-        self.cam_zoom = max(self.cam_zoom + delta_rad, 2.5)
-        hdeg = self.camera.getH() + hdel
-        hrad = hdeg * pi / 180
-        z = min(max(self.camera.getZ() + delta_psi, -self.cam_zoom), self.cam_zoom)
-        if z == 0:
-            z = EPS
-        # psiDegrees = asin(self.camera.getZ() / self.cam_zoom) + delta_psi
-        # psiRadians = psiDegrees * pi / 180
-        x = self.cam_zoom * sin(hrad) * cos(z / self.cam_zoom)
-        y = -self.cam_zoom * cos(hrad) * cos(z / self.cam_zoom)
+            delta_rad += speed_rad * dt
+        # calculate new radius
+        self.cam_radius = max(self.cam_radius + delta_rad, 2.5)
+        # NOTE angles are in degrees unless labeled as radians
+        # calculate phi
+        self.cam_phi = self.cam_phi + delta_phi
+        radians_phi = self.cam_phi * pi / 180
+        # calculate heading
+        self.cam_theta += delta_theta
+        radians_theta = self.cam_theta * pi / 180
+        # apply translation
+        x = self.cam_radius * sin(radians_theta) * cos(radians_phi)
+        y = -self.cam_radius * cos(radians_theta) * cos(radians_phi)
+        z = self.cam_radius * sin(radians_phi)
         self.camera.setPos(x, y, z)
-        # p =
-        self.camera.setHpr(hdeg, 0, 0)
+        assert isclose(
+            sqrt(sum(self.camera.getPos() ** 2)), self.cam_radius, abs_tol=0.1
+        )
+        # apply rotation
+        self.camera.setP(-self.cam_phi)
+        self.camera.setH(self.cam_theta)
         return Task.cont
 
 
@@ -429,8 +415,6 @@ def plot(g: nx.Graph, debug=False, **kwargs):
     if debug:
         for kw in ["verbose", "plot_axes", "autolabel", "cam_mouse_control"]:
             kwargs[kw] = not kwargs.get(kw, False)
-    # FIXME
-    kwargs["cam_mouse_control"] = 0
     app = NxPlot(g, **kwargs)
     app.run()
 

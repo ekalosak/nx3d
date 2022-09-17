@@ -1,3 +1,10 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project.scripts]
+nx3d = "nx3d.__main__:main"
+
 [tool.poetry]
 name = "nx3d"
 version = "22.9.4"
@@ -10,16 +17,10 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-# packages = [
-#     { include = "src/nx3d/" }
-# ]
 
 [project.urls]
 "Homepage" = "https://github.com/ekalosak/nx3d"
 "Bug Tracker" = "https://github.com/ekalosak/nx3d/issues"
-
-[project.scripts]
-nx3d = "nx3d.__main__:main"
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -36,6 +37,5 @@ mypy = "^0.971"
 Sphinx = "^5.1.1"
 sphinx-rtd-theme = "^1.0.0"
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.isort]
+profile = "black"
