@@ -1,7 +1,7 @@
 """ This source provides functionality for plotting nodes and edges of nx.Graph objects in 3D.
 """
 
-from math import cos, isclose, pi, sin, sqrt
+from math import atan, cos, isclose, pi, sin, sqrt
 from pathlib import Path
 from typing import Any, Callable, Hashable, Optional, Union
 
@@ -159,7 +159,14 @@ class NxPlot(ShowBase):
                 label_color=edge_label_color,
             )
 
-        self.initial_camera_radius = self.render.getBounds().getRadius() * 3.5
+        # make sure the initial camera settings show the whole graph
+        bd = self.render.getBounds()
+        rad = (
+            sqrt(sum(bd.getApproxCenter() ** 2)) + bd.getRadius()
+        )  # sphere centerd at 000 containing bd
+        fov = min(self.camLens.fov)  # angle in degrees
+        radians_fov = fov / 180 * pi
+        self.initial_camera_radius = rad / atan(radians_fov)
         self._init_gui(cam_mouse_control)
         if not cam_mouse_control:
             self._init_keyboard_camera()
