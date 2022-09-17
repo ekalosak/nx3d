@@ -1,13 +1,16 @@
 # nx3d
 
-[![-missing homepage badge-](https://img.shields.io/badge/home-GitHub-blueviolet)](https://github.com/ekalosak/nx3d)
-[![-missing docs badge-](https://img.shields.io/badge/docs-ReadTheDocs-blue)](https://nx3d.readthedocs.io/en/latest/)
-[![-missing pypi badge-](https://img.shields.io/pypi/v/nx3d)](https://pypi.org/project/nx3d/)
-[![-missing build status badge-](https://img.shields.io/github/workflow/status/ekalosak/nx3d/Build%20nx3d%20and%20publish%20to%20PyPi)](https://github.com/ekalosak/nx3d/actions)
+[![-missing homepage-](https://img.shields.io/badge/home-GitHub-blueviolet)](https://github.com/ekalosak/nx3d)
+[![-missing docs-](https://img.shields.io/badge/docs-ReadTheDocs-blue)](https://nx3d.readthedocs.io/en/latest/)
+[![-missing pypi-](https://img.shields.io/pypi/v/nx3d)](https://pypi.org/project/nx3d/)
+[![-missing build status-](https://img.shields.io/github/workflow/status/ekalosak/nx3d/Build%20nx3d%20and%20publish%20to%20PyPi)](https://github.com/ekalosak/nx3d/actions)
+
+[-missing project maturity-](https://img.shields.io/badge/status-experimental-brightgreen)
+[-missing download count-](https://img.shields.io/pypi/dw/nx3d)
 
 The missing 3D plotting functionality for the excellent `networkx` Python package.
 
-![-missing image of frucht graph-](https://raw.githubusercontent.com/ekalosak/nx3d/cf473d1dfab506ecd4044f4693c09aea0e1153ba/data/frucht.gif)
+![-missing gif of frucht graph-](https://raw.githubusercontent.com/ekalosak/nx3d/cf473d1dfab506ecd4044f4693c09aea0e1153ba/data/frucht.gif)
 
 # Installation
 In your shell:
@@ -38,7 +41,6 @@ import nx3d
 g = nx.frucht_graph()
 nx3d.plot(g)
 ```
-
 For more customization, use the `nx3d.plot_nx3d()` function.
 
 # Contribute
@@ -76,18 +78,30 @@ pre-commit run -a
 I used `brew install python-sphinx`, see installation instructions on [www.sphinx-doc.org](https://www.sphinx-doc.org/en/master/usage/installation.html).
 
 ## Hack on some code
-- heterogeneous sizes and colors
-- node labels
-- edge labels
-- support for DiGraph and MultiDiGraph
-- tests
-  - for the trig: add collision nodes to the ends of the edges and check that they collide with source and sink nodes
-  - for the API: fizzbuzz it, check some basic content of the ShowBase returned by `plot_nx3d`
-  - CI running the tests and a badge
-- interactive camera controls
-- animation control via callbacks
-- save video / snapshot to file
+- NX-0 P0 support for DiGraph and MultiDiGraph
+- NX-17 P1 debug node and edge labels
+- NX-2 P2 implement demo with state transformation
+- NX-11 P3 allow plotting features to be controlled uisng graph attributes e.g. `g.nodes[nd]['color']`
+- NX-3 P3 mouse click and pull expands graph; probably requires generating the panda3d body for the graph
+- NX-9 P3 press r to reset camera position
+- NX-12 P3 press t to toggle default spin
+- NX-13 P3 press h to toggle GUI
+- NX-15 P4 press m to toggle mouse control
+- NX-14 P4 better formatting of floats and printed objects in GUI
+- NX-5 P4 heterogeneous sizes and colors
+- NX-6 P4 save video / snapshot to file
   (https://docs.panda3d.org/1.10/python/reference/direct.showbase.ShowBase?highlight=screenshot#direct.showbase.ShowBase.ShowBase.movie)
+- NX-8 P4 mouse click and drag on node pulls with stickyness on original location along node to free area and finally to
+  gravity around destination node.
+  - blocked by NX-3
+- NX-4 P4 tests
+  - for the trig: add collision nodes to the ends of the edges and check that they collide with source and sink nodes
+  - for the API: fizzbuzz it, check some basic content of the NxPlot once instantiated
+  - CI running the tests and a badge
+- NX-7 P5 physics like goop so when moved
+  - blocked by NX-3
+- NX-10 P5 enable 'peek' with camera by shifting lense with keyboard controls k, l
+- NX-16 P5 rotation with momentum and acceleration
 
 ## Open a PR
 - fork this repo
