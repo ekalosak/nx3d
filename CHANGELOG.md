@@ -1,3 +1,8 @@
+# Sun Sep 19 2022
+22.9.7
+- implemented state transition function
+- implemented graph diffusion example
+
 # Sat Sep 18 2022
 22.9.6
 - refactored and set up for DiGraph support

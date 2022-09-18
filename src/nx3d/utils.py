@@ -8,8 +8,3 @@ def set_color(ob: NodePath, color):
     mat.setShininess(5.0)
     mat.setBaseColor(color)
     ob.setMaterial(mat, 1)
-
-
-def set_label(ob: NodePath, label):
-    # FIXME
-    ...

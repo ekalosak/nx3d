@@ -17,3 +17,6 @@
   - NX-7 P5 physics like goop so when moved
   - NX-10 P5 enable 'peek' with camera by shifting lense with keyboard controls k, l
   - NX-16 P5 rotation with momentum and acceleration
+- NX-19 P5 fix frame increment and time increment inputs to `state_trans_func`
+  - di is always 0
+  - dt is incorrect value i.e. task.time for delay task does not appear to be the delta time between executions

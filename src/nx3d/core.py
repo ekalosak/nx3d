@@ -143,14 +143,14 @@ class Nx3D(ShowBase):
         if pos is None:
             pos_scale = 2.0 * sqrt(len(self.g.nodes))
             pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
-            self.pos = pos
+        if not all(len(p) == 3 for p in pos.values()):
+            raise ValueError("pos must be 3d, use the dim=3 kwarg in nx layouts")
+        self.pos = pos
         if autolabel:
             if verbose and any([edge_labels, node_labels]):
                 print("overwriting labels, set autolabel False if undesired")
             node_labels = {nd: str(nd) for nd in self.g.nodes}
             edge_labels = {ed: str(ed) for ed in self.g.edges}
-        if plot_axes:
-            self._init_axes(edge_fp)
 
         # add some lights
         for i, dl in enumerate(DEFAULTS["light"]["direct"]):
@@ -181,12 +181,13 @@ class Nx3D(ShowBase):
             model.setPos(*self.pos[nd])
             tpid = f"node_{i}_text"
             label = node_labels.get(nd)
-            text = self._init_panda3d_text(tpid, label, node_label_color)
+            text, text_ = self._init_panda3d_text(tpid, label, node_label_color)
             text.reparentTo(model)
             text.setScale(tuple(1 / sc for sc in model.getScale()))
             text.setZ(model.getBounds().getRadius() * 1.1)
             self.g.nodes[nd]["model"] = model
-            self.g.nodes[nd]["text"] = text
+            self.g.nodes[nd]["text_np"] = text
+            self.g.nodes[nd]["text_tn"] = text_
 
         for i, ed in enumerate(self.g.edges):
             pid = f"edge_{i}"
@@ -216,13 +217,16 @@ class Nx3D(ShowBase):
 
             tpid = f"edge_{i}_text"
             label = edge_labels.get(ed)
-            text = self._init_panda3d_text(tpid, label, edge_label_color)
+            text, text_ = self._init_panda3d_text(tpid, label, edge_label_color)
             text.reparentTo(self.render)
             text.setPos(tuple((p0 + p1) / 2.0))
             self.g.edges[ed]["model"] = model
             self.g.edges[ed]["text"] = text
+            self.g.edges[ed]["text_"] = text_
 
         self._init_gui(mouse)
+        if plot_axes:
+            self._init_axes(edge_fp)
         if not mouse:
             self._init_keyboard_camera()
         self._init_state_update(state_trans_freq, state_trans_func)
@@ -270,7 +274,7 @@ class Nx3D(ShowBase):
         text: NodePath = self.render.attachNewNode(_text)
         text.setBillboardPointEye()  # face text towards camera
         utils.set_color(text, color)
-        return text
+        return text, _text
 
     def _init_gui(self, mouse: bool, scale=0.07):
         help_text = MOUSE_CONTROLLS if mouse else KEYBOARD_CONTROLLS
@@ -333,7 +337,6 @@ class Nx3D(ShowBase):
         """main state update loop
         TODO
         apply to render
-        - nd col
         - ed col
         - nd lab
         - ed lab
@@ -343,9 +346,10 @@ class Nx3D(ShowBase):
         self.state_trans_func(self.g, task.frame, task.time)
         for nd in self.g:
             elm = self.g.nodes[nd]
-            assert all(isinstance(x, NodePath) for x in (elm["model"], elm["text"]))
+            assert all(isinstance(x, NodePath) for x in (elm["model"], elm["text_np"]))
+            assert isinstance(elm["text_tn"], TextNode)
             utils.set_color(elm["model"], elm["color"])
-            utils.set_label(elm["text"], elm["label"])
+            elm["text_tn"].setText(elm["label"])
         # TODO
         # for ed in self.g.edges:
         #     utilsself.g.edges[ed]['color']

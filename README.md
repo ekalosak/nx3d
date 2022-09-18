@@ -26,6 +26,12 @@ After installation,
 python -m nx3d autolabel
 ```
 
+or
+
+```sh
+python -m nx3d diffusion
+```
+
 ## In your Python REPL
 ```python
 import nx3d
