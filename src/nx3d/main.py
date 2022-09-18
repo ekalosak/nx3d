@@ -76,7 +76,7 @@ class Nx3D(ShowBase):
     Usage:
     ```
     g = nx.frucht_graph();
-    app = Nx3D(g);
+    app = Nx3D(g, autolabel=True);
     app.run();
     ```
 
@@ -87,17 +87,19 @@ class Nx3D(ShowBase):
     Args:
         g: The graph you'd like to plot.
         pos: Positions of the nodes in the graph. If None, spring_layout will be used.
-        node_color: RGBA color for the nodes. Currently homogeneous colors only suppported.
-        node_shape: Shapes of the nodes, either radius or XYZ dimensions, singular or plural.
+        node_color: Default RGBA color for the nodes.
+        node_shape: Default shapes of the nodes, either radius or XYZ dimensions.
         node_labels: Map from the graph's nodes to string labels.
-        edge_color: RGBA color for the edges. Currently homogeneous colors only suppported.
-        edge_radius: Radius of the edges, singular or plural.
+        edge_color: Default RGBA color for the edges. Currently homogeneous colors only suppported.
+        edge_radius: Default radius of the edges.
         edge_labels: Map from the graph's edges to string labels.
         plot_axes: Show the XYZ axes in the 3D scene
         verbose: Print diagnostic information to stdout.
         autolabel: Use the string representation of the nx.Graphs' nodes and edges as labels.
-        graph_state_func: This function will be called every <state_trans_freq> seconds to update the internal nx.Graph.
-        state_trans_freq: How often, in seconds, to apply the graph_state_func.
+        mouse: Use mouse control rather than keyboard control.
+        state_trans_freq: How often, in seconds, to apply the <state_trans_func>.
+        state_trans_func: A state transfer function for <g>'s state. Set attributes on graph components to update the
+        render.
 
     Returns:
         ShowBase: The Panda3D object capable of rendering the graph
@@ -118,9 +120,9 @@ class Nx3D(ShowBase):
         plot_axes=False,
         verbose=False,
         autolabel=False,
-        cam_mouse_control=False,
-        graph_state_func: Optional[Callable[[nx.Graph], Any]] = None,
-        graph_trans_frq: Optional[float] = None,
+        mouse=False,
+        state_trans_freq: Optional[float] = None,
+        state_trans_func: Optional[Callable[[nx.Graph], Any]] = None,
     ):
         ShowBase.__init__(self)
         self.g = deepcopy(graph)
@@ -143,13 +145,10 @@ class Nx3D(ShowBase):
             pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
             self.pos = pos
         if autolabel:
-            if verbose and any([x for x in [edge_labels, node_labels]]):
-                print(
-                    "overwriting node and edge labels, set autolabel to False if undesired"
-                )
+            if verbose and any([edge_labels, node_labels]):
+                print("overwriting labels, set autolabel False if undesired")
             node_labels = {nd: str(nd) for nd in self.g.nodes}
             edge_labels = {ed: str(ed) for ed in self.g.edges}
-
         if plot_axes:
             self._init_axes(edge_fp)
 
@@ -194,6 +193,7 @@ class Nx3D(ShowBase):
             model: NodePath = self._init_panda3d_model(pid, edge_fp)
             model.reparentTo(self.render)
             utils.set_color(model, edge_color)
+            # TODO use model.lookAt(node)
             # rotate into place
             p0, p1 = (self.pos[e] for e in ed)
             model.setPos(*p0)
@@ -222,8 +222,8 @@ class Nx3D(ShowBase):
             self.g.edges[ed]["model"] = model
             self.g.edges[ed]["text"] = text
 
-        self._init_gui(cam_mouse_control)
-        if not cam_mouse_control:
+        self._init_gui(mouse)
+        if not mouse:
             self._init_keyboard_camera()
 
     def _init_panda3d_model(
@@ -258,8 +258,8 @@ class Nx3D(ShowBase):
         utils.set_color(text, color)
         return text
 
-    def _init_gui(self, cam_mouse_control, scale=0.07):
-        help_text = MOUSE_CONTROLLS if cam_mouse_control else KEYBOARD_CONTROLLS
+    def _init_gui(self, mouse: bool, scale=0.07):
+        help_text = MOUSE_CONTROLLS if mouse else KEYBOARD_CONTROLLS
         help_text = help_text.strip()
         self.gui_fixed_lines = []
         self.gui_updatable_lines = {}
@@ -402,7 +402,7 @@ def plot(g: nx.Graph, debug=False, **kwargs):
         None
     """
     if debug:
-        for kw in ["verbose", "plot_axes", "autolabel", "cam_mouse_control"]:
+        for kw in ["verbose", "plot_axes", "autolabel", "mouse"]:
             kwargs[kw] = not kwargs.get(kw, False)
     app = Nx3D(g, **kwargs)
     app.run()
