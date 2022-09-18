@@ -344,9 +344,7 @@ class Nx3D(ShowBase):
         for nd in self.g:
             elm = self.g.nodes[nd]
             assert all(isinstance(x, NodePath) for x in (elm["model"], elm["text"]))
-            print(elm["color"])
             utils.set_color(elm["model"], elm["color"])
-            break
             utils.set_label(elm["text"], elm["label"])
         # TODO
         # for ed in self.g.edges:
