@@ -23,7 +23,7 @@ After installation,
 
 ## From your shell
 ```sh
-python -m nx3d
+python -m nx3d autolabel
 ```
 
 ## In your Python REPL
@@ -41,7 +41,6 @@ import nx3d
 g = nx.frucht_graph()
 nx3d.plot(g)
 ```
-For more customization, use the `nx3d.plot_nx3d()` function.
 
 # Contribute
 Thank you for considering contributing to `nx3d`.
@@ -78,25 +77,8 @@ pre-commit run -a
 I used `brew install python-sphinx`, see installation instructions on [www.sphinx-doc.org](https://www.sphinx-doc.org/en/master/usage/installation.html).
 
 ## Hack on some code
-IN PROGRESS:
-- NX-17 P1 debug node and edge labels
-  - set edge labels between p0 and p1
-  - use lookAt rather than roll-your-own trig
-
-TODO:
-- NX-0 P0 support for DiGraph and MultiDiGraph
-  - DiGraph model, interface
-  - MultiGraph model, interface
-  - MultiDiGraph model, interface
-- NX-2 P2 implement DEMO with state transformation
-  - blocked by NX-11
-  - blocked by NX-5
-- NX-11 P2 allow plotting features to be controlled uisng graph attributes e.g. `g.nodes[nd]['color']`
-- NX-5 P2 heterogeneous sizes and colors
+See TODO.md for open tasks.
 
 ## Open a PR
-- fork this repo
-- push your code to your repo
-- open a pull request against this repo
 
-When it merges, CD will push to PyPi.
+When it merges, CD will push to PyPi and ReadTheDocs.

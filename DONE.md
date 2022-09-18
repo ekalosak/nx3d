@@ -1,0 +1,2 @@
+- NX-5 P2 heterogeneous sizes and colors on initialization
+  - won't do, heterogeneous attr to be set using NX-11 interface
