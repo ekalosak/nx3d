@@ -15,7 +15,6 @@ from panda3d.core import (
     AmbientLight,
     DirectionalLight,
     KeyboardButton,
-    Material,
     NodePath,
     PointLight,
     TextNode,
@@ -49,7 +48,7 @@ Pos3 = dict[Hashable, np.ndarray]
 
 DEFAULTS = dict(
     node={
-        "shape": 0.45,
+        "shape": 0.9,
         "color": (0.4, 0, 0.3, 1),
         "text_color": (0, 1, 0, 1),
     },
@@ -59,9 +58,9 @@ DEFAULTS = dict(
         "text_color": (0, 1, 0, 1),
     },
     speed={
-        "theta": 48.0,
-        "phi": 48.0,
-        "radius": 18.0,
+        "theta": 96.0,
+        "phi": 96.0,
+        "radius": 36.0,
     },
     light={
         "direct": [{"hpr": (0, -20, 0)}, {"hpr": (180, -20, 0)}],
@@ -152,7 +151,7 @@ class Nx3D(ShowBase):
             edge_labels = {ed: str(ed) for ed in self.g.edges}
 
         if plot_axes:
-            self.add_axes(edge_fp)
+            self._init_axes(edge_fp)
 
         # add some lights
         for i, dl in enumerate(DEFAULTS["light"]["direct"]):
@@ -188,7 +187,7 @@ class Nx3D(ShowBase):
             )
             if text is not None:
                 text.reparentTo(model)
-                text.setZ(model.getBounds().getRadius() + 1.0)
+                text.setZ(model.getBounds().getRadius() * 1.1)
             self.g.nodes[nd]["model"] = model
             self.g.nodes[nd]["text"] = text
 
@@ -225,24 +224,9 @@ class Nx3D(ShowBase):
             self.g.edges[ed]["model"] = model
             self.g.edges[ed]["text"] = text
 
-        self._init_camera()
         self._init_gui(cam_mouse_control)
         if not cam_mouse_control:
             self._init_keyboard_camera()
-
-    def _make_gui_text(self, text: str, i: int, scale=0.07, color=(1, 1, 1, 1)):
-        """Make gui line <i>
-        https://github.com/panda3d/panda3d/blob/master/samples/asteroids/main.py#L86
-        """
-        return OnscreenText(
-            text=text,
-            parent=self.a2dTopLeft,
-            pos=(scale, -0.06 * i - 0.1),
-            fg=color,
-            align=TextNode.ALeft,
-            shadow=(0, 0, 0, 0.5),
-            scale=scale,
-        )
 
     def _init_panda3d_model(
         self,
@@ -287,23 +271,20 @@ class Nx3D(ShowBase):
             self.gui_fixed_lines.append(label)
         self.taskMgr.doMethodLater(0.1, self.guiUpdateTask, "GuiUpdate")
 
-    def _init_camera(self):
-        # make sure the initial camera settings show the whole graph
+    def _init_keyboard_camera(self):
+        self.disableMouse()
         bd = self.render.getBounds()
         rad = np.linalg.norm(bd.getApproxCenter()) + bd.getRadius()
         fov = min(self.camLens.fov)  # angle in degrees
         radians_fov = fov / 180 * pi
-        self.initial_camera_radius = rad / atan(radians_fov)
+        self.initial_camera_radius = rad / atan(radians_fov) * 1.8
         self.camera.setPos(0, -self.initial_camera_radius, 0)
-
-    def _init_keyboard_camera(self):
-        self.disableMouse()
         self.cam_radius = self.initial_camera_radius
         self.cam_theta = 0.0
         self.cam_phi = 0.0
         self.taskMgr.add(self.keyboardCameraTask, "KeyboardCameraTask")
 
-    def add_axes(self, fn):
+    def _init_axes(self, fn):
         """put 3 cylinders in r:x:small, g:y:med, b:z:big; for debugging"""
         self.zax = self.loader.loadModel(fn)
         self.zax.reparentTo(self.render)
@@ -322,6 +303,20 @@ class Nx3D(ShowBase):
         self.yax.setScale(0.9, 0.9, 1)
         self.yax.setPos(0, 0, 0)
         self.yax.setP(-90)
+
+    def _make_gui_text(self, text: str, i: int, scale=0.07, color=(1, 1, 1, 1)):
+        """Make gui line <i>
+        https://github.com/panda3d/panda3d/blob/master/samples/asteroids/main.py#L86
+        """
+        return OnscreenText(
+            text=text,
+            parent=self.a2dTopLeft,
+            pos=(scale, -0.06 * i - 0.1),
+            fg=color,
+            align=TextNode.ALeft,
+            shadow=(0, 0, 0, 0.5),
+            scale=scale,
+        )
 
     def guiUpdateTask(self, task):
         """write diagnostic info to gui"""
