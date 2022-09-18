@@ -1,5 +1,5 @@
 # Sat Sep 18 2022
-22.9.6 NOT PUBLISHED
+22.9.6
 - refactored and set up for DiGraph support
 - lighting improvements
 - debugged edge and node labels, colors

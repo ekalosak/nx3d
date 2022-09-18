@@ -16,7 +16,7 @@ sys.path.append(str(Path(__file__).parent / "../src"))
 project = "nx3d"
 copyright = "2022, Eric Kalosa-Kenyon"
 author = "Eric Kalosa-Kenyon"
-release = "22.9.5"
+release = "22.9.6"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
