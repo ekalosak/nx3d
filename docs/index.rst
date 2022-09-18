@@ -17,4 +17,5 @@ The `project homepage <https://github.com/ekalosak/nx3d>`_ has usage and contrib
    :caption: Contents:
 
    api
+   examples
    notes
