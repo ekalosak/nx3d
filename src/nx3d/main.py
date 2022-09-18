@@ -1,6 +1,7 @@
 """ This source provides functionality for plotting nodes and edges of nx.Graph objects in 3D.
 """
 
+from copy import deepcopy
 from math import atan, cos, isclose, pi, sin, sqrt
 from pathlib import Path
 from typing import Any, Callable, Hashable, Optional, Union
@@ -10,7 +11,23 @@ import numpy as np
 from direct.gui.OnscreenText import OnscreenText
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-from panda3d.core import DirectionalLight, KeyboardButton, Material, NodePath, TextNode
+from panda3d.core import (
+    AmbientLight,
+    DirectionalLight,
+    KeyboardButton,
+    Material,
+    NodePath,
+    PointLight,
+    TextNode,
+)
+
+from .utils import set_color
+
+FILES = {
+    "node": Path(__file__).parent / "data/icosphere.egg",
+    "edge": Path(__file__).parent / "data/cylinder.egg",
+    "edge_directed": Path(__file__).parent / "data/cone.egg",
+}
 
 KEYBOARD_CONTROLLS = """
 wasd - move camera around
@@ -22,46 +39,51 @@ mouse2 drag - zoom
 mouse3 drag - rotate
 """
 
-
 EPS = 1e-6  # numerical non-zero
 UPS = 32  # updates per second to state
 
 Vector = Union[list[float], tuple[float, ...]]
 Vec3 = tuple[float, float, float]
 Vec4 = tuple[float, float, float, float]
-Colors = Union[Vec4, list[Vec4]]
-Shapes = Union[float, Vec3, list[float], list[Vec3]]
 Pos3 = dict[Hashable, np.ndarray]
 
-# NOTE using dict for default node rather than dataclass because @dataclass(kw_only) is 3.10, want to support 3.9
-default_node = {
-    "filepath": Path(__file__).parent / "data/icosphere.egg",
-    "shape": 0.45,
-    "color": (0.3, 0, 0.3, 1),
-    "text_color": (1, 1, 1, 1),
-}
-default_edge = {
-    "filepath": Path(__file__).parent / "data/unit_cylinder_base_at_0.egg",
-    "radius": 0.75,
-    "color": (0.2, 0.2, 0.2, 1),
-    "text_color": (0, 1, 1, 1),
-}
-default_speed = {
-    "theta": 48.0,
-    "phi": 48.0,
-    "radius": 18.0,
-}
+DEFAULTS = dict(
+    node={
+        "shape": 0.45,
+        "color": (0.4, 0, 0.3, 1),
+        "text_color": (1, 1, 1, 1),
+    },
+    edge={
+        "radius": 1.75,
+        "color": (0.2, 0.2, 0.3, 1),
+        "text_color": (0, 1, 1, 1),
+    },
+    speed={
+        "theta": 48.0,
+        "phi": 48.0,
+        "radius": 18.0,
+    },
+    light={
+        "direct": [{"pos": (0, -20, 0)}, {"pos": (180, -20, 0)}],
+        "ambient": [{"intensity": 0.3}],
+        "point": [{"pos": (0, 0, 0)}],
+    },
+)
 
 
-class NxPlot(ShowBase):
-    """The main class for plotting networkx graphs using panda3d.
+class Nx3D(ShowBase):
+    """This class provides a networkx.Graph-based API for a lightweight 3D visualization.
 
-    NxPlot is a panda3d object capable of rendering the nx.Graph.
-    Use the object as follows:
-
+    Usage:
+    ```
     g = nx.frucht_graph();
-    app = NxPlot(g);
+    app = Nx3D(g);
     app.run();
+    ```
+
+    Configuration is applied in the following order:
+        1. Graph attributes e.g. g.nodes[...]['color']
+        2. Arguments to this function
 
     Args:
         g: The graph you'd like to plot.
@@ -86,28 +108,37 @@ class NxPlot(ShowBase):
         self,
         graph: nx.Graph,
         pos: Optional[Pos3] = None,
-        node_color: Colors = default_node["color"],
-        node_shape: Shapes = default_node["shape"],
+        node_color: Vec4 = DEFAULTS["node"]["color"],
+        node_shape: Union[float, Vec3] = DEFAULTS["node"]["shape"],
         node_labels: dict = {},
-        node_label_color: Colors = default_node["text_color"],
-        edge_color: Colors = default_edge["color"],
-        edge_radius: Union[float, list[float]] = default_edge["radius"],
+        node_label_color: Vec4 = DEFAULTS["node"]["text_color"],
+        edge_color: Vec4 = DEFAULTS["edge"]["color"],
+        edge_radius: Union[float, list[float]] = DEFAULTS["edge"]["radius"],
         edge_labels: dict = {},
-        edge_label_color: Colors = default_edge["text_color"],
+        edge_label_color: Vec4 = DEFAULTS["edge"]["text_color"],
         plot_axes=False,
         verbose=False,
         autolabel=False,
         cam_mouse_control=False,
-        node_fn=default_node["filepath"],
-        edge_fn=default_edge["filepath"],
         graph_state_func: Optional[Callable[[nx.Graph], Any]] = None,
         graph_trans_frq: Optional[float] = None,
     ):
         ShowBase.__init__(self)
-
-        self.g = graph
+        self.g = deepcopy(graph)
         self.verbose = verbose
-        self.graph_state_func = graph_state_func
+
+        node_fp = FILES.get("node")
+        if isinstance(self.g, nx.MultiDiGraph):
+            edge_fp = FILES.get("edge_directed_bent")
+        elif isinstance(self.g, nx.MultiGraph):
+            edge_fp = FILES.get("edge_bent")
+        elif isinstance(self.g, nx.DiGraph):
+            edge_fp = FILES.get("edge_directed")
+        else:
+            edge_fp = FILES.get("edge")
+        if edge_fp is None:
+            raise NotImplementedError
+
         if pos is None:
             pos_scale = 2.0 * sqrt(len(self.g.nodes))
             pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
@@ -120,15 +151,8 @@ class NxPlot(ShowBase):
             node_labels = {nd: str(nd) for nd in self.g.nodes}
             edge_labels = {ed: str(ed) for ed in self.g.edges}
 
-        for v in self.pos.values():
-            if len(v) != 3:
-                raise ValueError(
-                    "Positions must be 3-dimensional."
-                    " Try using the `dim=3` kwarg for computing positions from networkx layout functions."
-                )
-
         if plot_axes:
-            self.add_axes(edge_fn)
+            self.add_axes(edge_fp)
 
         # add some lights
         for hpr in [(0, 0, 0), (0, 0, 180), (180, 180, 180), (180, 0, 180)]:
@@ -141,7 +165,7 @@ class NxPlot(ShowBase):
             node_label = node_labels.get(nd)
             self._add_node(
                 nd,
-                egg_filepath=node_fn,
+                egg_filepath=node_fp,
                 color=node_color,
                 scale=node_shape,
                 label=node_label,
@@ -152,7 +176,7 @@ class NxPlot(ShowBase):
             edge_label = edge_labels.get(ed)
             self._add_edge(
                 ed,
-                egg_filepath=edge_fn,
+                egg_filepath=edge_fp,
                 color=edge_color,
                 scale=edge_radius,
                 label=edge_label,
@@ -364,9 +388,9 @@ class NxPlot(ShowBase):
         out_button = KeyboardButton.ascii_key("o")
         is_down = self.mouseWatcherNode.is_button_down
         dt = globalClock.get_dt()  # noqa: F821
-        speed_rad = default_speed["radius"]
-        speed_phi = default_speed["phi"]
-        speed_theta = default_speed["theta"]
+        speed_rad = DEFAULTS["speed"]["radius"]
+        speed_phi = DEFAULTS["speed"]["phi"]
+        speed_theta = DEFAULTS["speed"]["theta"]
         delta_rad = 0
         delta_phi = 0
         delta_theta = 0
@@ -422,7 +446,7 @@ def plot(g: nx.Graph, debug=False, **kwargs):
     if debug:
         for kw in ["verbose", "plot_axes", "autolabel", "cam_mouse_control"]:
             kwargs[kw] = not kwargs.get(kw, False)
-    app = NxPlot(g, **kwargs)
+    app = Nx3D(g, **kwargs)
     app.run()
 
 
