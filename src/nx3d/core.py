@@ -20,7 +20,7 @@ from panda3d.core import (
     TextNode,
 )
 
-from . import utils
+from nx3d import utils
 
 FILES = {
     "node": Path(__file__).parent / "data/icosphere.egg",
