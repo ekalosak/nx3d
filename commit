@@ -1,6 +1,0 @@
-removed plot_nx3d in favor of direct NxPlot usage at that point
-sketched graph_update_func and semantics
-added autolabel
-prioritized tasks in readme
-consolidated constants to top of source
-adjusted default lighting and scale

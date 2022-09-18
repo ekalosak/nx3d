@@ -1,7 +1,8 @@
 """ This source provides functionality for plotting nodes and edges of nx.Graph objects in 3D.
 """
 
-from math import cos, isclose, pi, sin, sqrt
+from copy import deepcopy
+from math import atan, cos, isclose, pi, sin, sqrt
 from pathlib import Path
 from typing import Any, Callable, Hashable, Optional, Union
 
@@ -10,7 +11,22 @@ import numpy as np
 from direct.gui.OnscreenText import OnscreenText
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-from panda3d.core import DirectionalLight, KeyboardButton, Material, NodePath, TextNode
+from panda3d.core import (
+    AmbientLight,
+    DirectionalLight,
+    KeyboardButton,
+    NodePath,
+    PointLight,
+    TextNode,
+)
+
+from . import utils
+
+FILES = {
+    "node": Path(__file__).parent / "data/icosphere.egg",
+    "edge": Path(__file__).parent / "data/cylinder.egg",
+    "edge_directed": Path(__file__).parent / "data/cone.egg",
+}
 
 KEYBOARD_CONTROLLS = """
 wasd - move camera around
@@ -22,61 +38,68 @@ mouse2 drag - zoom
 mouse3 drag - rotate
 """
 
-
 EPS = 1e-6  # numerical non-zero
 UPS = 32  # updates per second to state
 
 Vector = Union[list[float], tuple[float, ...]]
 Vec3 = tuple[float, float, float]
 Vec4 = tuple[float, float, float, float]
-Colors = Union[Vec4, list[Vec4]]
-Shapes = Union[float, Vec3, list[float], list[Vec3]]
 Pos3 = dict[Hashable, np.ndarray]
 
-# NOTE using dict for default node rather than dataclass because @dataclass(kw_only) is 3.10, want to support 3.9
-default_node = {
-    "filepath": Path(__file__).parent / "data/icosphere.egg",
-    "shape": 0.45,
-    "color": (0.3, 0, 0.3, 1),
-    "text_color": (1, 1, 1, 1),
-}
-default_edge = {
-    "filepath": Path(__file__).parent / "data/unit_cylinder_base_at_0.egg",
-    "radius": 0.75,
-    "color": (0.2, 0.2, 0.2, 1),
-    "text_color": (0, 1, 1, 1),
-}
-default_speed = {
-    "theta": 48.0,
-    "phi": 48.0,
-    "radius": 18.0,
-}
+DEFAULTS = dict(
+    node={
+        "shape": 0.9,
+        "color": (0.4, 0, 0.3, 1),
+        "text_color": (0, 1, 0, 1),
+    },
+    edge={
+        "radius": 1.75,
+        "color": (0.3, 0.3, 0.3, 0.5),
+        "text_color": (0, 1, 0, 1),
+    },
+    speed={
+        "theta": 96.0,
+        "phi": 96.0,
+        "radius": 36.0,
+    },
+    light={
+        "direct": [{"hpr": (0, -20, 0)}, {"hpr": (180, -20, 0)}],
+        "ambient": [{"intensity": 0.3}],
+        "point": [{"pos": (0, 0, 0)}],
+    },
+)
 
 
-class NxPlot(ShowBase):
-    """The main class for plotting networkx graphs using panda3d.
+class Nx3D(ShowBase):
+    """This class provides a networkx.Graph-based API for a lightweight 3D visualization.
 
-    NxPlot is a panda3d object capable of rendering the nx.Graph.
-    Use the object as follows:
-
+    Usage:
+    ```
     g = nx.frucht_graph();
-    app = NxPlot(g);
+    app = Nx3D(g, autolabel=True);
     app.run();
+    ```
+
+    Configuration is applied in the following order:
+        1. Graph attributes e.g. g.nodes[...]['color']
+        2. Arguments to this function
 
     Args:
         g: The graph you'd like to plot.
         pos: Positions of the nodes in the graph. If None, spring_layout will be used.
-        node_color: RGBA color for the nodes. Currently homogeneous colors only suppported.
-        node_shape: Shapes of the nodes, either radius or XYZ dimensions, singular or plural.
+        node_color: Default RGBA color for the nodes.
+        node_shape: Default shapes of the nodes, either radius or XYZ dimensions.
         node_labels: Map from the graph's nodes to string labels.
-        edge_color: RGBA color for the edges. Currently homogeneous colors only suppported.
-        edge_radius: Radius of the edges, singular or plural.
+        edge_color: Default RGBA color for the edges. Currently homogeneous colors only suppported.
+        edge_radius: Default radius of the edges.
         edge_labels: Map from the graph's edges to string labels.
         plot_axes: Show the XYZ axes in the 3D scene
         verbose: Print diagnostic information to stdout.
         autolabel: Use the string representation of the nx.Graphs' nodes and edges as labels.
-        graph_state_func: This function will be called every <state_trans_freq> seconds to update the internal nx.Graph.
-        state_trans_freq: How often, in seconds, to apply the graph_state_func.
+        mouse: Use mouse control rather than keyboard control.
+        state_trans_freq: How often, in seconds, to apply the <state_trans_func>.
+        state_trans_func: A state transfer function for <g>'s state. Set attributes on graph components to update the
+        render.
 
     Returns:
         ShowBase: The Panda3D object capable of rendering the graph
@@ -86,227 +109,179 @@ class NxPlot(ShowBase):
         self,
         graph: nx.Graph,
         pos: Optional[Pos3] = None,
-        node_color: Colors = default_node["color"],
-        node_shape: Shapes = default_node["shape"],
+        node_color: Vec4 = DEFAULTS["node"]["color"],
+        node_shape: Union[float, Vec3] = DEFAULTS["node"]["shape"],
         node_labels: dict = {},
-        node_label_color: Colors = default_node["text_color"],
-        edge_color: Colors = default_edge["color"],
-        edge_radius: Union[float, list[float]] = default_edge["radius"],
+        node_label_color: Vec4 = DEFAULTS["node"]["text_color"],
+        edge_color: Vec4 = DEFAULTS["edge"]["color"],
+        edge_radius: Union[float, list[float]] = DEFAULTS["edge"]["radius"],
         edge_labels: dict = {},
-        edge_label_color: Colors = default_edge["text_color"],
+        edge_label_color: Vec4 = DEFAULTS["edge"]["text_color"],
         plot_axes=False,
         verbose=False,
         autolabel=False,
-        cam_mouse_control=False,
-        node_fn=default_node["filepath"],
-        edge_fn=default_edge["filepath"],
-        graph_state_func: Optional[Callable[[nx.Graph], Any]] = None,
-        graph_trans_frq: Optional[float] = None,
+        mouse=False,
+        state_trans_freq: Optional[float] = None,
+        state_trans_func: Optional[Callable[[nx.Graph], Any]] = None,
     ):
         ShowBase.__init__(self)
-
-        self.g = graph
+        self.g = deepcopy(graph)
         self.verbose = verbose
-        self.graph_state_func = graph_state_func
+
+        node_fp = FILES.get("node")
+        if isinstance(self.g, nx.MultiDiGraph):
+            edge_fp = FILES.get("edge_directed_bent")
+        elif isinstance(self.g, nx.MultiGraph):
+            edge_fp = FILES.get("edge_bent")
+        elif isinstance(self.g, nx.DiGraph):
+            edge_fp = FILES.get("edge_directed")
+        else:
+            edge_fp = FILES.get("edge")
+        if edge_fp is None or node_fp is None:
+            raise NotImplementedError
+
         if pos is None:
             pos_scale = 2.0 * sqrt(len(self.g.nodes))
             pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
             self.pos = pos
         if autolabel:
-            if verbose and any([x for x in [edge_labels, node_labels]]):
-                print(
-                    "overwriting node and edge labels, set autolabel to False if undesired"
-                )
+            if verbose and any([edge_labels, node_labels]):
+                print("overwriting labels, set autolabel False if undesired")
             node_labels = {nd: str(nd) for nd in self.g.nodes}
             edge_labels = {ed: str(ed) for ed in self.g.edges}
-
-        for v in self.pos.values():
-            if len(v) != 3:
-                raise ValueError(
-                    "Positions must be 3-dimensional."
-                    " Try using the `dim=3` kwarg for computing positions from networkx layout functions."
-                )
-
         if plot_axes:
-            self.add_axes(edge_fn)
+            self._init_axes(edge_fp)
 
         # add some lights
-        for hpr in [(0, 0, 0), (0, 0, 180), (180, 180, 180), (180, 0, 180)]:
-            dlight = DirectionalLight(f"my dlight {hpr}")
+        for i, dl in enumerate(DEFAULTS["light"]["direct"]):
+            hpr = dl["hpr"]
+            dlight = DirectionalLight(f"directional_light_{i}")
             dlnp = self.render.attachNewNode(dlight)
             self.render.setLight(dlnp)
             dlnp.setHpr(*hpr)
+        for i, al in enumerate(DEFAULTS["light"]["ambient"]):
+            intensity = al["intensity"]
+            alight = AmbientLight(f"ambient_light_{i}")
+            alnp = self.render.attachNewNode(alight)
+            self.render.setLight(alnp)
+            alnp.setColor(intensity)
+        for i, pl in enumerate(DEFAULTS["light"]["point"]):
+            pos = pl["pos"]
+            plight = PointLight(f"point_light_{i}")
+            plnp = self.render.attachNewNode(plight)
+            self.render.setLight(plnp)
+            plnp.setPos(*pos)
 
-        for nd in self.g.nodes:
-            node_label = node_labels.get(nd)
-            self._add_node(
-                nd,
-                egg_filepath=node_fn,
-                color=node_color,
-                scale=node_shape,
-                label=node_label,
-                label_color=node_label_color,
-            )
+        for i, nd in enumerate(self.g.nodes):
+            pid = f"node_{i}"
+            model: NodePath = self._init_panda3d_model(pid, node_fp)
+            model.reparentTo(self.render)
+            model.setScale(node_shape)
+            utils.set_color(model, node_color)
+            model.setPos(*self.pos[nd])
+            tpid = f"node_{i}_text"
+            label = node_labels.get(nd)
+            text = self._init_panda3d_text(tpid, label, node_label_color)
+            text.reparentTo(model)
+            text.setScale(tuple(1 / sc for sc in model.getScale()))
+            text.setZ(model.getBounds().getRadius() * 1.1)
+            self.g.nodes[nd]["model"] = model
+            self.g.nodes[nd]["text"] = text
 
-        for ed in self.g.edges:
-            edge_label = edge_labels.get(ed)
-            self._add_edge(
-                ed,
-                egg_filepath=edge_fn,
-                color=edge_color,
-                scale=edge_radius,
-                label=edge_label,
-                label_color=edge_label_color,
-            )
+        for i, ed in enumerate(self.g.edges):
+            pid = f"edge_{i}"
+            model: NodePath = self._init_panda3d_model(pid, edge_fp)
+            model.reparentTo(self.render)
+            utils.set_color(model, edge_color)
+            # TODO use model.lookAt(node)
+            # rotate into place
+            p0, p1 = (self.pos[e] for e in ed)
+            model.setPos(*p0)
+            dist = sqrt(((p0 - p1) ** 2).sum())
+            model.setScale(edge_radius, edge_radius, dist)
+            d = np.array(p1 - p0, dtype=float)
+            for ix in np.argwhere(d == 0):
+                d[ix] = EPS
+            if d[1] > 0:
+                pitch = -np.arccos(d[2] / dist)
+                assert pitch < 0
+            else:
+                pitch = np.arccos(d[2] / dist)
+                assert pitch > 0
+            pitch = pitch / pi * 180
+            model.setP(pitch)
+            heading = -np.arctan(d[0] / d[1])
+            heading = heading / pi * 180
+            model.setH(heading)
 
-        self.initial_camera_radius = self.render.getBounds().getRadius() * 3.5
-        self._init_gui(cam_mouse_control)
-        if not cam_mouse_control:
+            tpid = f"edge_{i}_text"
+            label = edge_labels.get(ed)
+            text = self._init_panda3d_text(tpid, label, edge_label_color)
+            text.reparentTo(self.render)
+            text.setPos(tuple((p0 + p1) / 2.0))
+            self.g.edges[ed]["model"] = model
+            self.g.edges[ed]["text"] = text
+
+        self._init_gui(mouse)
+        if not mouse:
             self._init_keyboard_camera()
 
-    def genLabelText(self, text, i, scale=0.07, color=(1, 1, 1, 1)):
-        """https://github.com/panda3d/panda3d/blob/master/samples/asteroids/main.py#L86"""
-        return OnscreenText(
-            text=text,
-            parent=self.a2dTopLeft,
-            pos=(scale, -0.06 * i - 0.1),
-            fg=color,
-            align=TextNode.ALeft,
-            shadow=(0, 0, 0, 0.5),
-            scale=scale,
-        )
+    def _init_panda3d_model(
+        self,
+        pid: str,
+        egg_filepath: Path,
+        scale: Union[float, Vec3] = 1.0,
+        color: Optional[Vec4] = None,
+    ):
+        if self.verbose:
+            print(f"loading model: {egg_filepath}")
+        _model = self.loader.loadModel(egg_filepath)
+        model = NodePath(pid)
+        _model.reparentTo(model)
+        model.setScale(scale)
+        if color:
+            utils.set_color(model, color)
+        return model
+
+    def _init_panda3d_text(
+        self,
+        text_id: str,
+        label: Optional[str] = None,
+        color: Optional[Vec4] = None,
+    ) -> NodePath:
+        if label is None:
+            label = ""
+        _text = TextNode(text_id)
+        _text.setText(label)
+        text: NodePath = self.render.attachNewNode(_text)
+        text.setBillboardPointEye()  # face text towards camera
+        utils.set_color(text, color)
+        return text
+
+    def _init_gui(self, mouse: bool, scale=0.07):
+        help_text = MOUSE_CONTROLLS if mouse else KEYBOARD_CONTROLLS
+        help_text = help_text.strip()
+        self.gui_fixed_lines = []
+        self.gui_updatable_lines = {}
+        for i, line in enumerate(help_text.split("\n")):
+            label = self._make_gui_text(line, i, scale, color=(1, 1, 0, 1))
+            self.gui_fixed_lines.append(label)
+        self.taskMgr.doMethodLater(0.1, self.guiUpdateTask, "GuiUpdate")
 
     def _init_keyboard_camera(self):
         self.disableMouse()
+        bd = self.render.getBounds()
+        rad = np.linalg.norm(bd.getApproxCenter()) + bd.getRadius()
+        fov = min(self.camLens.fov)  # angle in degrees
+        radians_fov = fov / 180 * pi
+        self.initial_camera_radius = rad / atan(radians_fov) * 1.8
+        self.camera.setPos(0, -self.initial_camera_radius, 0)
         self.cam_radius = self.initial_camera_radius
         self.cam_theta = 0.0
         self.cam_phi = 0.0
         self.taskMgr.add(self.keyboardCameraTask, "KeyboardCameraTask")
 
-    def _init_gui(self, cam_mouse_control, scale=0.07):
-        help_text = MOUSE_CONTROLLS if cam_mouse_control else KEYBOARD_CONTROLLS
-        help_text = help_text.strip()
-        self.gui_fixed_lines = []
-        self.gui_updatable_lines = {}
-        for i, line in enumerate(help_text.split("\n")):
-            label = self.genLabelText(line, i, scale, color=(1, 1, 0, 1))
-            self.gui_fixed_lines.append(label)
-        self.taskMgr.doMethodLater(0.1, self.guiUpdateTask, "GuiUpdate")
-
-    def _make_text(
-        self, node_path: NodePath, text_id: str, label: str, color: Vec4
-    ) -> NodePath:
-        text = TextNode(text_id)
-        text.setText(label)
-        tnd: NodePath = self.render.attachNewNode(text)
-        tnd.setBillboardAxis()  # face text towards camera
-        self._set_color(tnd, color)
-        return tnd
-
-    def _set_color(self, node_path, color):
-        mat = Material()
-        mat.setShininess(5.0)
-        mat.setBaseColor(color)
-        node_path.setMaterial(mat, 1)
-
-    def _make_graph_component(
-        self,
-        egg_filepath: str,
-        id_str: str,
-        scale: float = 1.0,
-        color: Optional[Vec4] = None,
-        label: Optional[str] = None,
-        label_color: Optional[Vec4] = None,
-        verbose=False,
-    ) -> tuple[NodePath, Optional[NodePath]]:
-        """construct a 3D graph element representing (edge, edge_label) or (node, node_label)"""
-        if verbose:
-            print(f"loading model: {egg_filepath}")
-        ob = self.loader.loadModel(egg_filepath)
-        if color:
-            self._set_color(ob, color)
-        if label:
-            text_id = f"{id_str}_text"
-            text_node = self._make_text(ob, text_id, label, label_color)
-        else:
-            text_node = None
-        return ob, text_node
-
-    def _add_edge(
-        self,
-        ed,
-        egg_filepath: str,
-        color: Vector,
-        scale: float,
-        label: Optional[str] = None,
-        label_color: Optional[Vec4] = None,
-    ):
-        edge, text = self._make_graph_component(
-            egg_filepath, str(ed), scale, color, label, label_color
-        )
-        assert isinstance(edge, NodePath)
-        assert isinstance(text, NodePath) or text is None
-        edge.reparentTo(self.render)
-        p0, p1 = (self.pos[e] for e in ed)
-        edge.setPos(*p0)
-        dist = sqrt(((p0 - p1) ** 2).sum())
-        edge.setScale(scale, scale, dist)
-        if text:
-            text.setScale(1 / scale, 1 / scale, 1 / dist)
-        d = np.array(p1 - p0, dtype=float)
-        for ix in np.argwhere(d == 0):
-            d[ix] = EPS
-        if self.verbose:
-            print()
-            print(f"color {color}")
-            print(f"p0 {p0}")
-            print(f"p1 {p1}")
-            print(f"p1 - p0 {d}")
-            print(f"dist {dist}")
-        # FIRST pitch
-        # The pitch rotates the Z-axis-aligned cylinder so that the far end of the cylinder is XY-coplanar with the
-        # target node. The triangle is that having a height of d[2] and a hypotenuse of dist. Setting the height to d[2]
-        # ensures that the tip of the hypotenuse will be co-XY-planar with the p1 node.
-        if d[1] > 0:
-            pitch = -np.arccos(d[2] / dist)
-            assert pitch < 0
-        else:
-            pitch = np.arccos(d[2] / dist)
-            assert pitch > 0
-        pitch = pitch / pi * 180
-        if self.verbose:
-            print(f"pitch {pitch}")
-        edge.setP(pitch)
-        # SECOND heading
-        # The heading rotates the cylinder end along an arc embedded in the XY plane at z=p1[2]. The angle is that of
-        # the XY projected triangle formed by p0 and p1.
-        heading = -np.arctan(d[0] / d[1])
-        heading = heading / pi * 180
-        if self.verbose:
-            print(f"heading {heading}")
-        edge.setH(heading)
-        if text:
-            text.reparentTo(edge)
-        return edge
-
-    def _add_node(
-        self,
-        nd,
-        egg_filepath: str,
-        scale: Union[float, Vector],
-        color: Vector,
-        label: Optional[str] = None,
-        label_color: Optional[Vec4] = None,
-    ):
-        node, text = self._make_graph_component(
-            egg_filepath, str(nd), scale, color, label, label_color
-        )
-        node.reparentTo(self.render)
-        if text:
-            text.reparentTo(node)
-        node.setPos(*self.pos[nd])
-
-    def add_axes(self, fn):
+    def _init_axes(self, fn):
         """put 3 cylinders in r:x:small, g:y:med, b:z:big; for debugging"""
         self.zax = self.loader.loadModel(fn)
         self.zax.reparentTo(self.render)
@@ -326,6 +301,20 @@ class NxPlot(ShowBase):
         self.yax.setPos(0, 0, 0)
         self.yax.setP(-90)
 
+    def _make_gui_text(self, text: str, i: int, scale=0.07, color=(1, 1, 1, 1)):
+        """Make gui line <i>
+        https://github.com/panda3d/panda3d/blob/master/samples/asteroids/main.py#L86
+        """
+        return OnscreenText(
+            text=text,
+            parent=self.a2dTopLeft,
+            pos=(scale, -0.06 * i - 0.1),
+            fg=color,
+            align=TextNode.ALeft,
+            shadow=(0, 0, 0, 0.5),
+            scale=scale,
+        )
+
     def guiUpdateTask(self, task):
         """write diagnostic info to gui"""
         rot = "camera rotation: "
@@ -333,13 +322,13 @@ class NxPlot(ShowBase):
         rot_ = rot + str(self.camera.getHpr())
         pos_ = pos + str(self.camera.getPos())
         if rot not in self.gui_updatable_lines:
-            self.gui_updatable_lines[rot] = self.genLabelText(
+            self.gui_updatable_lines[rot] = self._make_gui_text(
                 rot_, len(self.gui_fixed_lines), 0.07
             )
         else:
             self.gui_updatable_lines[rot].setText(rot_)
         if pos not in self.gui_updatable_lines:
-            self.gui_updatable_lines[pos] = self.genLabelText(
+            self.gui_updatable_lines[pos] = self._make_gui_text(
                 pos_, len(self.gui_fixed_lines) + 1, 0.07
             )
         else:
@@ -357,9 +346,9 @@ class NxPlot(ShowBase):
         out_button = KeyboardButton.ascii_key("o")
         is_down = self.mouseWatcherNode.is_button_down
         dt = globalClock.get_dt()  # noqa: F821
-        speed_rad = default_speed["radius"]
-        speed_phi = default_speed["phi"]
-        speed_theta = default_speed["theta"]
+        speed_rad = DEFAULTS["speed"]["radius"]
+        speed_phi = DEFAULTS["speed"]["phi"]
+        speed_theta = DEFAULTS["speed"]["theta"]
         delta_rad = 0
         delta_phi = 0
         delta_theta = 0
@@ -413,9 +402,9 @@ def plot(g: nx.Graph, debug=False, **kwargs):
         None
     """
     if debug:
-        for kw in ["verbose", "plot_axes", "autolabel", "cam_mouse_control"]:
+        for kw in ["verbose", "plot_axes", "autolabel", "mouse"]:
             kwargs[kw] = not kwargs.get(kw, False)
-    app = NxPlot(g, **kwargs)
+    app = Nx3D(g, **kwargs)
     app.run()
 
 

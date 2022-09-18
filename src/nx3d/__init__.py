@@ -1,1 +1,1 @@
-from .main import NxPlot, demo, plot
+from .main import Nx3D, demo, plot

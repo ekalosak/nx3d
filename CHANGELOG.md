@@ -1,3 +1,10 @@
+# Sat Sep 18 2022
+22.9.6
+- refactored and set up for DiGraph support
+- lighting improvements
+- debugged edge and node labels, colors
+- renamed main class from NxPlot to Nx3D
+
 # Sat Sep 17 2022
 22.9.5
 - revved version to propagate README fix, essentially a no-op
