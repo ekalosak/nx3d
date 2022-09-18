@@ -74,11 +74,11 @@ class Nx3D(ShowBase):
     """This class provides a networkx.Graph-based API for a lightweight 3D visualization.
 
     Usage:
-    ```
-    g = nx.frucht_graph();
-    app = Nx3D(g, autolabel=True);
-    app.run();
-    ```
+        ```
+        g = nx.frucht_graph();
+        app = Nx3D(g, autolabel=True);
+        app.run();
+        ```
 
     Configuration is applied in the following order:
         1. Graph attributes e.g. g.nodes[...]['color']
@@ -98,8 +98,10 @@ class Nx3D(ShowBase):
         autolabel: Use the string representation of the nx.Graphs' nodes and edges as labels.
         mouse: Use mouse control rather than keyboard control.
         state_trans_freq: How often, in seconds, to apply the <state_trans_func>.
-        state_trans_func: A state transfer function for <g>'s state. Set attributes on graph components to update the
-        render.
+        state_trans_func: A state transfer function for <g>'s state.
+            Set attributes on graph components to update the render. If not None, the graph's nodes and edges must be
+            annotated with 'color' and 'label' entries in the annotation dictionary i.e. g.nodes[nd]['color'] must exist for
+            all nodes.
 
     Returns:
         ShowBase: The Panda3D object capable of rendering the graph
@@ -122,7 +124,7 @@ class Nx3D(ShowBase):
         autolabel=False,
         mouse=False,
         state_trans_freq: float = 1.0,
-        state_trans_func: Optional[Callable[[nx.Graph], Any]] = None,
+        state_trans_func: Optional[Callable[[nx.Graph, int, float], Any]] = None,
     ):
         ShowBase.__init__(self)
         self.g = deepcopy(graph)

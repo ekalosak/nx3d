@@ -1,12 +1,10 @@
+""" This source implements graph diffusion to demo the dynamic graph state support """
 import random
 
 import networkx as nx
 import numpy as np
 
 from nx3d.core import Nx3D
-
-""" Graph diffusion
-"""
 
 RATE = 0.1  # scale diffusion rate per update call
 EPS = 2.3  # when total delta gets under this value, restart
@@ -46,11 +44,18 @@ def _diffuse(g: nx.Graph, di: int, dt: float):
 
 
 def diffusion_example(**kwargs):
-    """example state transition function; diffusion on undirected graph"""
-    print("\nBEGIN\n")
+    """This function opens a popup showing how a graph diffusion can be rendered. You can run it from your shell as
+    follows:
+
+    ```
+    python -m nx3d diffusion
+    ```
+
+    Args:
+        kwargs: passed to Nx3D.__init__
+    """
     g = nx.frucht_graph()
-    pos = None
+    pos = kwargs.pop("pos", None)
     _init_diff_graph(g)
     app = Nx3D(g, pos=pos, state_trans_func=_diffuse, **kwargs)
     app.run()
-    print("\nEND\n")
