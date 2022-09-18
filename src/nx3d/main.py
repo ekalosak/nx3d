@@ -135,7 +135,7 @@ class Nx3D(ShowBase):
             edge_fp = FILES.get("edge_directed")
         else:
             edge_fp = FILES.get("edge")
-        if edge_fp is None:
+        if edge_fp is None or node_fp is None:
             raise NotImplementedError
 
         if pos is None:
@@ -182,12 +182,10 @@ class Nx3D(ShowBase):
             model.setPos(*self.pos[nd])
             tpid = f"node_{i}_text"
             label = node_labels.get(nd)
-            text: Optional[NodePath] = self._init_panda3d_text(
-                tpid, label, node_label_color
-            )
-            if text is not None:
-                text.reparentTo(model)
-                text.setZ(model.getBounds().getRadius() * 1.1)
+            text = self._init_panda3d_text(tpid, label, node_label_color)
+            text.reparentTo(model)
+            text.setScale(tuple(1 / sc for sc in model.getScale()))
+            text.setZ(model.getBounds().getRadius() * 1.1)
             self.g.nodes[nd]["model"] = model
             self.g.nodes[nd]["text"] = text
 
@@ -231,8 +229,8 @@ class Nx3D(ShowBase):
     def _init_panda3d_model(
         self,
         pid: str,
-        egg_filepath: str,
-        scale: Optional[Union[float, Vec3]] = None,
+        egg_filepath: Path,
+        scale: Union[float, Vec3] = 1.0,
         color: Optional[Vec4] = None,
     ):
         if self.verbose:
@@ -240,9 +238,8 @@ class Nx3D(ShowBase):
         _model = self.loader.loadModel(egg_filepath)
         model = NodePath(pid)
         _model.reparentTo(model)
-        if scale is not None:
-            model.setScale(scale)
-        if color is not None:
+        model.setScale(scale)
+        if color:
             utils.set_color(model, color)
         return model
 
