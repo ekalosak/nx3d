@@ -121,7 +121,7 @@ class Nx3D(ShowBase):
         verbose=False,
         autolabel=False,
         mouse=False,
-        state_trans_freq: Optional[float] = None,
+        state_trans_freq: float = 1.0,
         state_trans_func: Optional[Callable[[nx.Graph], Any]] = None,
     ):
         ShowBase.__init__(self)
@@ -225,6 +225,20 @@ class Nx3D(ShowBase):
         self._init_gui(mouse)
         if not mouse:
             self._init_keyboard_camera()
+        self._init_state_update(state_trans_freq, state_trans_func)
+
+    def _init_state_update(
+        self,
+        state_trans_freq,
+        state_trans_func,
+    ):
+        self.state_trans_func = state_trans_func
+        if self.verbose:
+            print(f"state_trans_func {self.state_trans_func}")
+        if self.state_trans_func:
+            self.taskMgr.doMethodLater(
+                state_trans_freq, self.stateUpdateTask, "StateUpdate"
+            )
 
     def _init_panda3d_model(
         self,
@@ -315,12 +329,38 @@ class Nx3D(ShowBase):
             scale=scale,
         )
 
+    def stateUpdateTask(self, task):
+        """main state update loop
+        TODO
+        apply to render
+        - nd col
+        - ed col
+        - nd lab
+        - ed lab
+        """
+        if self.verbose:
+            print(f"stateUpdateTask from {task.name}")
+        self.state_trans_func(self.g, task.frame, task.time)
+        for nd in self.g:
+            elm = self.g.nodes[nd]
+            assert all(isinstance(x, NodePath) for x in (elm["model"], elm["text"]))
+            print(elm["color"])
+            utils.set_color(elm["model"], elm["color"])
+            break
+            utils.set_label(elm["text"], elm["label"])
+        # TODO
+        # for ed in self.g.edges:
+        #     utilsself.g.edges[ed]['color']
+        #     self.g.edges[ed]['label']
+        return Task.again
+
     def guiUpdateTask(self, task):
         """write diagnostic info to gui"""
         rot = "camera rotation: "
         pos = "camera position: "
         rot_ = rot + str(self.camera.getHpr())
         pos_ = pos + str(self.camera.getPos())
+        # FIXME init rot and pos in _init_gui
         if rot not in self.gui_updatable_lines:
             self.gui_updatable_lines[rot] = self._make_gui_text(
                 rot_, len(self.gui_fixed_lines), 0.07
@@ -385,30 +425,3 @@ class Nx3D(ShowBase):
         self.camera.setP(-self.cam_phi)
         self.camera.setH(self.cam_theta)
         return Task.cont
-
-
-def plot(g: nx.Graph, debug=False, **kwargs):
-    """Plot my graph now!
-
-    This is where you should start. Calling this function on your graph will cause a pop-up
-    containing the visualization to appear.
-
-    Args:
-        g (nx.Graph): The graph you'd like to plot.
-        debug (bool): Set to debug mode, entailing rendered and stdout debugging information, negates other debug-like args
-        kwargs: Passed to main class initialization
-
-    Returns:
-        None
-    """
-    if debug:
-        for kw in ["verbose", "plot_axes", "autolabel", "mouse"]:
-            kwargs[kw] = not kwargs.get(kw, False)
-    app = Nx3D(g, **kwargs)
-    app.run()
-
-
-def demo(debug=False, **kwargs):
-    """Runs a demo visualization. Good for checking that your installation worked."""
-    g = nx.frucht_graph()
-    plot(g, debug, **kwargs)

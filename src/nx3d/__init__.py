@@ -1,1 +1,2 @@
-from .core import Nx3D, demo, plot
+from .core import Nx3D
+from .simplified import demo, plot
