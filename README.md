@@ -78,30 +78,21 @@ pre-commit run -a
 I used `brew install python-sphinx`, see installation instructions on [www.sphinx-doc.org](https://www.sphinx-doc.org/en/master/usage/installation.html).
 
 ## Hack on some code
-- NX-0 P0 support for DiGraph and MultiDiGraph
+IN PROGRESS:
 - NX-17 P1 debug node and edge labels
-- NX-2 P2 implement demo with state transformation
-- NX-11 P3 allow plotting features to be controlled uisng graph attributes e.g. `g.nodes[nd]['color']`
-- NX-3 P3 mouse click and pull expands graph; probably requires generating the panda3d body for the graph
-- NX-9 P3 press r to reset camera position
-- NX-12 P3 press t to toggle default spin
-- NX-13 P3 press h to toggle GUI
-- NX-15 P4 press m to toggle mouse control
-- NX-14 P4 better formatting of floats and printed objects in GUI
-- NX-5 P4 heterogeneous sizes and colors
-- NX-6 P4 save video / snapshot to file
-  (https://docs.panda3d.org/1.10/python/reference/direct.showbase.ShowBase?highlight=screenshot#direct.showbase.ShowBase.ShowBase.movie)
-- NX-8 P4 mouse click and drag on node pulls with stickyness on original location along node to free area and finally to
-  gravity around destination node.
-  - blocked by NX-3
-- NX-4 P4 tests
-  - for the trig: add collision nodes to the ends of the edges and check that they collide with source and sink nodes
-  - for the API: fizzbuzz it, check some basic content of the NxPlot once instantiated
-  - CI running the tests and a badge
-- NX-7 P5 physics like goop so when moved
-  - blocked by NX-3
-- NX-10 P5 enable 'peek' with camera by shifting lense with keyboard controls k, l
-- NX-16 P5 rotation with momentum and acceleration
+  - set edge labels between p0 and p1
+  - use lookAt rather than roll-your-own trig
+
+TODO:
+- NX-0 P0 support for DiGraph and MultiDiGraph
+  - DiGraph model, interface
+  - MultiGraph model, interface
+  - MultiDiGraph model, interface
+- NX-2 P2 implement DEMO with state transformation
+  - blocked by NX-11
+  - blocked by NX-5
+- NX-11 P2 allow plotting features to be controlled uisng graph attributes e.g. `g.nodes[nd]['color']`
+- NX-5 P2 heterogeneous sizes and colors
 
 ## Open a PR
 - fork this repo
