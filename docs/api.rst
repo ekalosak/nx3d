@@ -1,5 +1,5 @@
 API
-===
+====
 
 .. autofunction:: nx3d.demo
 .. autofunction:: nx3d.plot

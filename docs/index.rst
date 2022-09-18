@@ -10,11 +10,12 @@ Welcome to nx3d's documentation!
 
 The API page documents the functions in the `nx3d` module.
 
-The `project homepage <https://github.com/ekalosak/nx3d>`_ has usage and contribution instructions..
+The `project homepage <https://github.com/ekalosak/nx3d>`_ has usage and contribution instructions.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    api
+   examples
    notes

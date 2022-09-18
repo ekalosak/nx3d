@@ -1,3 +1,9 @@
+# Sun Sep 19 2022
+22.9.7
+- implemented state transition function so now dynamic graphs are renderable
+- implemented graph diffusion example to demo state transition functionality
+- try `python -m nx3d diffusion`
+
 # Sat Sep 18 2022
 22.9.6
 - refactored and set up for DiGraph support

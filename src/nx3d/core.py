@@ -20,7 +20,7 @@ from panda3d.core import (
     TextNode,
 )
 
-from . import utils
+from nx3d import utils
 
 FILES = {
     "node": Path(__file__).parent / "data/icosphere.egg",
@@ -74,11 +74,11 @@ class Nx3D(ShowBase):
     """This class provides a networkx.Graph-based API for a lightweight 3D visualization.
 
     Usage:
-    ```
-    g = nx.frucht_graph();
-    app = Nx3D(g, autolabel=True);
-    app.run();
-    ```
+        ```
+        g = nx.frucht_graph();
+        app = Nx3D(g, autolabel=True);
+        app.run();
+        ```
 
     Configuration is applied in the following order:
         1. Graph attributes e.g. g.nodes[...]['color']
@@ -98,8 +98,10 @@ class Nx3D(ShowBase):
         autolabel: Use the string representation of the nx.Graphs' nodes and edges as labels.
         mouse: Use mouse control rather than keyboard control.
         state_trans_freq: How often, in seconds, to apply the <state_trans_func>.
-        state_trans_func: A state transfer function for <g>'s state. Set attributes on graph components to update the
-        render.
+        state_trans_func: A state transfer function for <g>'s state.
+            Set attributes on graph components to update the render. If not None, the graph's nodes and edges must be
+            annotated with 'color' and 'label' entries in the annotation dictionary i.e. g.nodes[nd]['color'] must exist for
+            all nodes.
 
     Returns:
         ShowBase: The Panda3D object capable of rendering the graph
@@ -121,8 +123,8 @@ class Nx3D(ShowBase):
         verbose=False,
         autolabel=False,
         mouse=False,
-        state_trans_freq: Optional[float] = None,
-        state_trans_func: Optional[Callable[[nx.Graph], Any]] = None,
+        state_trans_freq: float = 1.0,
+        state_trans_func: Optional[Callable[[nx.Graph, int, float], Any]] = None,
     ):
         ShowBase.__init__(self)
         self.g = deepcopy(graph)
@@ -143,14 +145,14 @@ class Nx3D(ShowBase):
         if pos is None:
             pos_scale = 2.0 * sqrt(len(self.g.nodes))
             pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
-            self.pos = pos
+        if not all(len(p) == 3 for p in pos.values()):
+            raise ValueError("pos must be 3d, use the dim=3 kwarg in nx layouts")
+        self.pos = pos
         if autolabel:
             if verbose and any([edge_labels, node_labels]):
                 print("overwriting labels, set autolabel False if undesired")
             node_labels = {nd: str(nd) for nd in self.g.nodes}
             edge_labels = {ed: str(ed) for ed in self.g.edges}
-        if plot_axes:
-            self._init_axes(edge_fp)
 
         # add some lights
         for i, dl in enumerate(DEFAULTS["light"]["direct"]):
@@ -181,12 +183,13 @@ class Nx3D(ShowBase):
             model.setPos(*self.pos[nd])
             tpid = f"node_{i}_text"
             label = node_labels.get(nd)
-            text = self._init_panda3d_text(tpid, label, node_label_color)
+            text, text_ = self._init_panda3d_text(tpid, label, node_label_color)
             text.reparentTo(model)
             text.setScale(tuple(1 / sc for sc in model.getScale()))
             text.setZ(model.getBounds().getRadius() * 1.1)
             self.g.nodes[nd]["model"] = model
-            self.g.nodes[nd]["text"] = text
+            self.g.nodes[nd]["text_np"] = text
+            self.g.nodes[nd]["text_tn"] = text_
 
         for i, ed in enumerate(self.g.edges):
             pid = f"edge_{i}"
@@ -216,15 +219,32 @@ class Nx3D(ShowBase):
 
             tpid = f"edge_{i}_text"
             label = edge_labels.get(ed)
-            text = self._init_panda3d_text(tpid, label, edge_label_color)
+            text, text_ = self._init_panda3d_text(tpid, label, edge_label_color)
             text.reparentTo(self.render)
             text.setPos(tuple((p0 + p1) / 2.0))
             self.g.edges[ed]["model"] = model
             self.g.edges[ed]["text"] = text
+            self.g.edges[ed]["text_"] = text_
 
         self._init_gui(mouse)
+        if plot_axes:
+            self._init_axes(edge_fp)
         if not mouse:
             self._init_keyboard_camera()
+        self._init_state_update(state_trans_freq, state_trans_func)
+
+    def _init_state_update(
+        self,
+        state_trans_freq,
+        state_trans_func,
+    ):
+        self.state_trans_func = state_trans_func
+        if self.verbose:
+            print(f"state_trans_func {self.state_trans_func}")
+        if self.state_trans_func:
+            self.taskMgr.doMethodLater(
+                state_trans_freq, self.stateUpdateTask, "StateUpdate"
+            )
 
     def _init_panda3d_model(
         self,
@@ -256,7 +276,7 @@ class Nx3D(ShowBase):
         text: NodePath = self.render.attachNewNode(_text)
         text.setBillboardPointEye()  # face text towards camera
         utils.set_color(text, color)
-        return text
+        return text, _text
 
     def _init_gui(self, mouse: bool, scale=0.07):
         help_text = MOUSE_CONTROLLS if mouse else KEYBOARD_CONTROLLS
@@ -315,12 +335,36 @@ class Nx3D(ShowBase):
             scale=scale,
         )
 
+    def stateUpdateTask(self, task):
+        """main state update loop
+        TODO
+        apply to render
+        - ed col
+        - nd lab
+        - ed lab
+        """
+        if self.verbose:
+            print(f"stateUpdateTask from {task.name}")
+        self.state_trans_func(self.g, task.frame, task.time)
+        for nd in self.g:
+            elm = self.g.nodes[nd]
+            assert all(isinstance(x, NodePath) for x in (elm["model"], elm["text_np"]))
+            assert isinstance(elm["text_tn"], TextNode)
+            utils.set_color(elm["model"], elm["color"])
+            elm["text_tn"].setText(elm["label"])
+        # TODO
+        # for ed in self.g.edges:
+        #     utilsself.g.edges[ed]['color']
+        #     self.g.edges[ed]['label']
+        return Task.again
+
     def guiUpdateTask(self, task):
         """write diagnostic info to gui"""
         rot = "camera rotation: "
         pos = "camera position: "
         rot_ = rot + str(self.camera.getHpr())
         pos_ = pos + str(self.camera.getPos())
+        # FIXME init rot and pos in _init_gui
         if rot not in self.gui_updatable_lines:
             self.gui_updatable_lines[rot] = self._make_gui_text(
                 rot_, len(self.gui_fixed_lines), 0.07
@@ -385,30 +429,3 @@ class Nx3D(ShowBase):
         self.camera.setP(-self.cam_phi)
         self.camera.setH(self.cam_theta)
         return Task.cont
-
-
-def plot(g: nx.Graph, debug=False, **kwargs):
-    """Plot my graph now!
-
-    This is where you should start. Calling this function on your graph will cause a pop-up
-    containing the visualization to appear.
-
-    Args:
-        g (nx.Graph): The graph you'd like to plot.
-        debug (bool): Set to debug mode, entailing rendered and stdout debugging information, negates other debug-like args
-        kwargs: Passed to main class initialization
-
-    Returns:
-        None
-    """
-    if debug:
-        for kw in ["verbose", "plot_axes", "autolabel", "mouse"]:
-            kwargs[kw] = not kwargs.get(kw, False)
-    app = Nx3D(g, **kwargs)
-    app.run()
-
-
-def demo(debug=False, **kwargs):
-    """Runs a demo visualization. Good for checking that your installation worked."""
-    g = nx.frucht_graph()
-    plot(g, debug, **kwargs)
