@@ -1,4 +1,7 @@
 # Sun Sep 19 2022
+22.9.8
+- implemented edge attribute interface for 'label' and 'color'
+
 22.9.7
 - implemented state transition function so now dynamic graphs are renderable
 - implemented graph diffusion example to demo state transition functionality
