@@ -21,7 +21,7 @@ jobs:
       - name: Install Python dependencies from lock file
         run: poetry install
       - name: Check import sorting
-        run: isort --check
+        run: python -m isort --check
       - name: Format code
         run: black --check
       - name: Lint code
