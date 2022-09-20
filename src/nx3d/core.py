@@ -91,6 +91,7 @@ class Nx3D(ShowBase):
             Set attributes on graph components to update the render. If not None, the graph's nodes and edges must be
             annotated with 'color' and 'label' entries in the annotation dictionary i.e. g.nodes[nd]['color'] must exist for
             all nodes.
+        kwagrs: Passed to super().__init__
 
     Returns:
         ShowBase: The Panda3D object capable of rendering the graph
@@ -114,8 +115,9 @@ class Nx3D(ShowBase):
         mouse=False,
         state_trans_freq: float = 1.0,
         state_trans_func: Optional[Callable[[nx.Graph, int, float], Any]] = None,
+        **kwargs,
     ):
-        ShowBase.__init__(self)
+        ShowBase.__init__(self, **kwargs)
         self.g = graph
         self.verbose = verbose
 
