@@ -46,10 +46,10 @@ UPS = 32  # updates per second to state
 DEFAULTS = dict(
     node_shape=0.9,
     node_color=(0.4, 0, 0.3, 1),
-    node_text_color=(0, 1, 0, 1),
+    node_label_color=(0, 1, 0, 1),
     edge_radius=1.75,
     edge_color=(0.3, 0.3, 0.3, 0.5),
-    edge_text_color=(0, 1, 0, 1),
+    edge_label_color=(0, 1, 0, 1),
     speed_theta=96.0,
     speed_phi=96.0,
     speed_radius=36.0,
@@ -103,11 +103,11 @@ class Nx3D(ShowBase):
         node_color: Vec4 = DEFAULTS["node_color"],
         node_shape: Union[float, Vec3] = DEFAULTS["node_shape"],
         node_labels: dict = {},
-        node_label_color: Vec4 = DEFAULTS["node_text_color"],
+        node_label_color: Vec4 = DEFAULTS["node_label_color"],
         edge_color: Vec4 = DEFAULTS["edge_color"],
         edge_radius: Union[float, list[float]] = DEFAULTS["edge_radius"],
         edge_labels: dict = {},
-        edge_label_color: Vec4 = DEFAULTS["edge_text_color"],
+        edge_label_color: Vec4 = DEFAULTS["edge_label_color"],
         plot_axes=False,
         verbose=False,
         autolabel=False,
@@ -119,6 +119,7 @@ class Nx3D(ShowBase):
         self.g = graph
         self.verbose = verbose
 
+        # init file paths
         node_fp = FILES.get("node")
         if isinstance(self.g, nx.MultiDiGraph):
             edge_fp = FILES.get("edge_directed_bent")
@@ -131,19 +132,44 @@ class Nx3D(ShowBase):
         if edge_fp is None or node_fp is None:
             raise NotImplementedError
 
-        if pos is None:
-            pos_scale = 2.0 * sqrt(len(self.g.nodes))
-            pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
-        if not all(len(p) == 3 for p in pos.values()):
-            raise ValueError("pos must be 3d, use the dim=3 kwarg in nx layouts")
-        self.pos = pos
+        # init labels
         if autolabel:
             if verbose and any([edge_labels, node_labels]):
                 print("overwriting labels, set autolabel False if undesired")
             node_labels = {nd: str(nd) for nd in self.g.nodes}
             edge_labels = {ed: str(ed) for ed in self.g.edges}
 
-        # add some lights
+        # init positions
+        if pos is None:
+            pos_scale = 2.0 * sqrt(len(self.g.nodes))
+            pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
+        if not all(len(p) == 3 for p in pos.values()):
+            raise ValueError("pos must be 3d, use the dim=3 kwarg in nx layouts")
+
+        # init graph attributes
+        for nd in self.g.nodes:
+            self.g.nodes[nd]["pos"] = self.g.nodes[nd].get("pos", pos[nd])
+            self.g.nodes[nd]["color"] = self.g.nodes[nd].get("color", node_color)
+            self.g.nodes[nd]["shape"] = self.g.nodes[nd].get("shape", node_color)
+            self.g.nodes[nd]["label"] = self.g.nodes[nd].get(
+                "label", node_labels.get(nd)
+            )
+            self.g.nodes[nd]["label_color"] = self.g.nodes[nd].get(
+                "label_color", node_label_color
+            )
+        for ed in self.g.edges:
+            self.g.edges[ed]["color"] = self.g.edges[ed].get("color", edge_color)
+            self.g.edges[ed]["radius"] = self.g.edges[ed].get("radius", edge_color)
+            self.g.edges[ed]["label"] = self.g.edges[ed].get(
+                "label", edge_labels.get(nd)
+            )
+            self.g.edges[ed]["label_color"] = self.g.edges[ed].get(
+                "label_color", edge_label_color
+            )
+
+        self.initial_pos = {nd: self.g.nodes[nd]["pos"] for nd in self.g.nodes}
+
+        # init lights
         for i, dl in enumerate(DEFAULTS["light_direct"]):
             hpr = dl["hpr"]
             dlight = DirectionalLight(f"directional_light_{i}")
@@ -163,16 +189,18 @@ class Nx3D(ShowBase):
             self.render.setLight(plnp)
             plnp.setPos(*pos)
 
+        # init 3d models
         for i, nd in enumerate(self.g.nodes):
             pid = f"node_{i}"
             model: NodePath = self._init_panda3d_model(pid, node_fp)
             model.reparentTo(self.render)
             model.setScale(node_shape)
-            utils.set_color(model, node_color)
-            model.setPos(*self.pos[nd])
+            utils.set_color(model, self.g.nodes[nd]["color"])
+            model.setPos(*self.g.nodes[nd]["pos"])
             tpid = f"node_{i}_text"
-            label = node_labels.get(nd)
-            text, text_ = self._init_panda3d_text(tpid, label, node_label_color)
+            text, text_ = self._init_panda3d_text(
+                tpid, self.g.nodes[nd]["label"], self.g.nodes[nd]["label_color"]
+            )
             text.reparentTo(model)
             text.setScale(tuple(1 / sc for sc in model.getScale()))
             text.setZ(model.getBounds().getRadius() * 1.1)
@@ -184,10 +212,11 @@ class Nx3D(ShowBase):
             pid = f"edge_{i}"
             model: NodePath = self._init_panda3d_model(pid, edge_fp)
             model.reparentTo(self.render)
-            utils.set_color(model, edge_color)
+            utils.set_color(model, self.g.edges[ed]["color"])
             # TODO use model.lookAt(node)
             # rotate into place
-            p0, p1 = (self.pos[e] for e in ed)
+            p0 = self.g.nodes[ed[0]]["pos"]
+            p1 = self.g.nodes[ed[1]]["pos"]
             model.setPos(*p0)
             dist = sqrt(((p0 - p1) ** 2).sum())
             model.setScale(edge_radius, edge_radius, dist)
@@ -207,8 +236,9 @@ class Nx3D(ShowBase):
             model.setH(heading)
 
             tpid = f"edge_{i}_text"
-            label = edge_labels.get(ed)
-            text, text_ = self._init_panda3d_text(tpid, label, edge_label_color)
+            text, text_ = self._init_panda3d_text(
+                tpid, self.g.edges[ed]["label"], self.g.edges[ed]["label_color"]
+            )
             text.reparentTo(self.render)
             text.setPos(tuple((p0 + p1) / 2.0))
             self.g.edges[ed]["model"] = model
@@ -228,8 +258,6 @@ class Nx3D(ShowBase):
         state_trans_func,
     ):
         self.state_trans_func = state_trans_func
-        if self.verbose:
-            print(f"state_trans_func {self.state_trans_func}")
         if self.state_trans_func:
             self.taskMgr.doMethodLater(
                 state_trans_freq, self.stateUpdateTask, "StateUpdate"
@@ -328,7 +356,7 @@ class Nx3D(ShowBase):
         """main state update loop"""
         if self.verbose:
             print(f"stateUpdateTask from {task.name}")
-        self.state_trans_func(self.g, task.frame, task.time)
+        self.state_trans_func(self.g, task.frame, task.delayTime)
         for elm in utils.all_elements(self.g):
             assert all(isinstance(x, NodePath) for x in (elm["model"], elm["text_np"]))
             assert isinstance(elm["text_tn"], TextNode)
