@@ -6,7 +6,7 @@
 [![-missing build status-](https://img.shields.io/github/workflow/status/ekalosak/nx3d/Build%20nx3d%20and%20publish%20to%20PyPi)](https://github.com/ekalosak/nx3d/actions)
 
 ![-missing project maturity-](https://img.shields.io/badge/status-experimental-brightgreen)
-![-missing download count-](https://img.shields.io/pypi/dw/nx3d)
+[![-missing download count-](https://img.shields.io/pypi/dw/nx3d)](https://pypistats.org/packages/nx3d)
 
 The missing 3D plotting functionality for the excellent `networkx` Python package.
 
@@ -51,10 +51,6 @@ nx3d.plot(g)
 # Contribute
 Thank you for considering contributing to `nx3d`.
 
-Currently, there's no enforced testing, formatting, linting, or typechecking with CI. Let's say that's intentional to
-keep this young project lightweight.  With that in mind, the pre-commit hooks defined in `.pre-commit-config.yaml` apply
-linting and formatting to keep the project clean. Please use the pre-commit hooks before opening a PR.
-
 ## Clone the code
 
 ## Setup the development environment
@@ -66,6 +62,9 @@ You can do this as you like, though you might consider:
 4. Verify the installation by running `python -m nx3d`
 
 ## Set up pre-commit
+The pre-commit hooks defined in `.pre-commit-config.yaml` apply linting and formatting to keep the project clean. Please
+use the pre-commit hooks to keep code quality high.
+
 From this project's root, initialize pre-commit as follows:
 
 ```sh
@@ -86,5 +85,5 @@ I used `brew install python-sphinx`, see installation instructions on [www.sphin
 See TODO.md for open tasks.
 
 ## Open a PR
-
-When it merges, CD will push to PyPi and ReadTheDocs.
+When a PR is created or updated, code checks will be run.
+When a PR is merged, the code will be pushed to PyPi and the docs to ReadTheDocs.

@@ -17,6 +17,12 @@ def _init_diff_graph(g):
         color = [random.random() * 0.8, random.random() * 0.8, random.random() * 0.8, 1]
         elm["color"] = tuple(color)
         elm["label"] = f"{(sum(color) - 1):.4f}"
+    for ed in g.edges:
+        col0 = np.array(g.nodes[ed[0]]["color"])
+        col1 = np.array(g.nodes[ed[1]]["color"])
+        color = (col0 + col1) / 2
+        g.edges[ed]["color"] = tuple(color)
+        g.edges[ed]["label"] = f"{(sum(color)):.3f}"
 
 
 def _diffuse(g: nx.Graph, di: int, dt: float):

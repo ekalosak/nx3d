@@ -1,9 +1,7 @@
 from itertools import chain, repeat
 
 from networkx import Graph
-from panda3d.core import Material, NodePath
-
-from nx3d.types import Vec4
+from panda3d.core import Material, NodePath, Vec4
 
 
 def set_color(ob: NodePath, color: Vec4):
