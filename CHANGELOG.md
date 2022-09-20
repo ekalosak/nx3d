@@ -2,6 +2,7 @@
 22.9.9
 - no longer deepcopying the graph passed to the plotting function
 - using nx graph attributes to track desired 3d model state
+- added CI and tests
 
 22.9.8
 - implemented edge attribute interface for 'label' and 'color'
