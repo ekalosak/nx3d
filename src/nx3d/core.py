@@ -1,10 +1,9 @@
 """ This source provides functionality for plotting nodes and edges of nx.Graph objects in 3D.
 """
 
-from itertools import chain, repeat
 from math import atan, cos, isclose, pi, sin, sqrt
 from pathlib import Path
-from typing import Any, Callable, Hashable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import networkx as nx
 import numpy as np
@@ -21,6 +20,7 @@ from panda3d.core import (
 )
 
 from nx3d import utils
+from nx3d.types import Pos3, Vec3, Vec4
 
 FILES = {
     "node": Path(__file__).parent / "data/icosphere.egg",
@@ -40,11 +40,6 @@ mouse3 drag - rotate
 
 EPS = 1e-6  # numerical non-zero
 UPS = 32  # updates per second to state
-
-Vector = Union[list[float], tuple[float, ...]]
-Vec3 = tuple[float, float, float]
-Vec4 = tuple[float, float, float, float]
-Pos3 = dict[Hashable, np.ndarray]
 
 DEFAULTS = dict(
     node_shape=0.9,
@@ -328,30 +323,18 @@ class Nx3D(ShowBase):
         )
 
     def stateUpdateTask(self, task):
-        """main state update loop
-        TODO
-        apply to render
-        - ed col
-        - ed lab
-        """
+        """main state update loop"""
         if self.verbose:
             print(f"stateUpdateTask from {task.name}")
         self.state_trans_func(self.g, task.frame, task.time)
-        for ob, kind in chain(
-            zip(self.g.nodes, repeat("node")), zip(self.g.edges, repeat("edge"))
-        ):
-            if kind == "node":
-                elm = self.g.nodes[ob]
-            else:
-                elm = self.g.edges[ob]
+        for elm in utils.all_elements(self.g):
             assert all(isinstance(x, NodePath) for x in (elm["model"], elm["text_np"]))
             assert isinstance(elm["text_tn"], TextNode)
+            assert all(isinstance(c, (float, int)) for c in elm["color"])
+            assert len(elm["color"]) == 4
+            assert isinstance(elm["label"], str)
             utils.set_color(elm["model"], elm["color"])
             elm["text_tn"].setText(elm["label"])
-        # for ed in self.g.edges:
-        #     elm = self.g.edges[ed]
-        #     utils.set_color(elm["model"], elm["color"])
-        #     elm["text_tn"].setText(elm["label"])
         return Task.again
 
     def guiUpdateTask(self, task):
