@@ -1,7 +1,7 @@
 """ This source provides functionality for plotting nodes and edges of nx.Graph objects in 3D.
 """
 
-from math import atan, cos, isclose, pi, sin, sqrt
+from math import cos, isclose, pi, sin, sqrt, tan
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
@@ -311,7 +311,7 @@ class Nx3D(ShowBase):
         rad = np.linalg.norm(bd.getApproxCenter()) + bd.getRadius()
         fov = min(self.camLens.fov)  # angle in degrees
         radians_fov = fov / 180 * pi
-        self.initial_camera_radius = rad / atan(radians_fov) * 1.8
+        self.initial_camera_radius = rad / tan(radians_fov) * 1.75
         self.camera.setPos(0, -self.initial_camera_radius, 0)
         self.cam_radius = self.initial_camera_radius
         self.cam_theta = 0.0

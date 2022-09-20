@@ -7,24 +7,101 @@ on:
     branches: [ main ]
 
 jobs:
-  code_checks:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        python-version: [3.9]
-        os: [ubuntu-latest]
+  sort_imports:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: Get changed files
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          list-files: shell
+          filters: |
+            py_modified:
+              - added|modified: "./**/*.py"
       - uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+      - name: Check that changed python files have sorted imports
+        uses: isort/isort-action@master
+        if: ${{ steps.filter.outputs.py_modified == 'true' }}
+        with:
+          isortVersion: "5.10.1"
+          sortPaths: ${{ steps.filter.outputs.py_modified_files }}
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get changed files
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          list-files: shell
+          filters: |
+            py_modified:
+              - added|modified: "./**/*.py"
+      - uses: actions/setup-python@v2
+        if: ${{ steps.filter.outputs.py_modified == 'true' }}
+        with:
+          python-version: "3.9"
+      - name: Check code formatting
+        if: ${{ steps.filter.outputs.py_modified == 'true' }}
+        uses: psf/black@stable
+        with:
+          options: "--check --diff"
+          src: "src/nx3d/"
+          version: "22.3.0"
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Get changed files
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          list-files: shell
+          filters: |
+            py_modified:
+              - added|modified: "./**/*.py"
+      - name: Setup Python
+        if: ${{ steps.filter.outputs.py_modified == 'true' }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+      - name: Install linter
+        if: ${{ steps.filter.outputs.py_modified == 'true' }}
+        run: pip install flake8
+      - name: Check code lint
+        if: ${{ steps.filter.outputs.py_modified == 'true' }}
+        run: flake8 ${{ steps.filter.outputs.py_modified_files }}
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Get changed files
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          list-files: shell
+          filters: |
+            py_modified:
+              - added|modified: "./**/*.py"
+      - name: Setup Python
+        if: ${{ steps.filter.outputs.py_modified == 'true' }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
       - name: Install package manager
+        if: ${{ steps.filter.outputs.py_modified == 'true' }}
         run: curl -sSL https://install.python-poetry.org | python3 -
-      - name: Install Python dependencies from lock file
+      - name: Install dependencies
+        if: ${{ steps.filter.outputs.py_modified == 'true' }}
         run: poetry install
-      - name: Check import sorting
-        run: python -m isort --check
-      - name: Format code
-        run: black --check
-      - name: Lint code
-        run: flake8
-      - name: Test code
+      - name: Run tests
+        if: ${{ steps.filter.outputs.py_modified == 'true' }}
         run: pytest
