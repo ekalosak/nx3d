@@ -1,0 +1,30 @@
+name: Run code checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  code_checks:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.9]
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install package manager
+        run: curl -sSL https://install.python-poetry.org | python3 -
+      - name: Install Python dependencies from lock file
+        run: poetry install
+      - name: Check import sorting
+        run: isort --check
+      - name: Format code
+        run: black --check
+      - name: Lint code
+        run: flake8
+      - name: Test code
+        run: pytest

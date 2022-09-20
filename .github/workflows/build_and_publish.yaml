@@ -11,14 +11,15 @@ jobs:
     strategy:
       matrix:
         python-version: [3.9]
-        # python-version: [3.9, 3.10]
         os: [ubuntu-latest]
-        # os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
       - run: curl -sSL https://install.python-poetry.org | python3 -
+        name: Install poetry
       - run: poetry build
+        name: Build wheel
       - run: poetry publish --username __token__ --password ${{ secrets.PYPI_API_TOKEN }}
+        name: Publish wheel to PyPi
