@@ -104,4 +104,4 @@ jobs:
         run: poetry install
       - name: Run tests
         if: ${{ steps.filter.outputs.py_modified == 'true' }}
-        run: pytest
+        run: poetry run pytest
