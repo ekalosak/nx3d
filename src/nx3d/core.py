@@ -1,7 +1,7 @@
 """ This source provides functionality for plotting nodes and edges of nx.Graph objects in 3D.
 """
 
-from copy import deepcopy
+from itertools import chain, repeat
 from math import atan, cos, isclose, pi, sin, sqrt
 from pathlib import Path
 from typing import Any, Callable, Hashable, Optional, Union
@@ -47,26 +47,18 @@ Vec4 = tuple[float, float, float, float]
 Pos3 = dict[Hashable, np.ndarray]
 
 DEFAULTS = dict(
-    node={
-        "shape": 0.9,
-        "color": (0.4, 0, 0.3, 1),
-        "text_color": (0, 1, 0, 1),
-    },
-    edge={
-        "radius": 1.75,
-        "color": (0.3, 0.3, 0.3, 0.5),
-        "text_color": (0, 1, 0, 1),
-    },
-    speed={
-        "theta": 96.0,
-        "phi": 96.0,
-        "radius": 36.0,
-    },
-    light={
-        "direct": [{"hpr": (0, -20, 0)}, {"hpr": (180, -20, 0)}],
-        "ambient": [{"intensity": 0.3}],
-        "point": [{"pos": (0, 0, 0)}],
-    },
+    node_shape=0.9,
+    node_color=(0.4, 0, 0.3, 1),
+    node_text_color=(0, 1, 0, 1),
+    edge_radius=1.75,
+    edge_color=(0.3, 0.3, 0.3, 0.5),
+    edge_text_color=(0, 1, 0, 1),
+    speed_theta=96.0,
+    speed_phi=96.0,
+    speed_radius=36.0,
+    light_direct=[{"hpr": (0, -20, 0)}, {"hpr": (180, -20, 0)}],
+    light_ambient=[{"intensity": 0.3}],
+    light_point=[{"pos": (0, 0, 0)}],
 )
 
 
@@ -111,14 +103,14 @@ class Nx3D(ShowBase):
         self,
         graph: nx.Graph,
         pos: Optional[Pos3] = None,
-        node_color: Vec4 = DEFAULTS["node"]["color"],
-        node_shape: Union[float, Vec3] = DEFAULTS["node"]["shape"],
+        node_color: Vec4 = DEFAULTS["node_color"],
+        node_shape: Union[float, Vec3] = DEFAULTS["node_shape"],
         node_labels: dict = {},
-        node_label_color: Vec4 = DEFAULTS["node"]["text_color"],
-        edge_color: Vec4 = DEFAULTS["edge"]["color"],
-        edge_radius: Union[float, list[float]] = DEFAULTS["edge"]["radius"],
+        node_label_color: Vec4 = DEFAULTS["node_text_color"],
+        edge_color: Vec4 = DEFAULTS["edge_color"],
+        edge_radius: Union[float, list[float]] = DEFAULTS["edge_radius"],
         edge_labels: dict = {},
-        edge_label_color: Vec4 = DEFAULTS["edge"]["text_color"],
+        edge_label_color: Vec4 = DEFAULTS["edge_text_color"],
         plot_axes=False,
         verbose=False,
         autolabel=False,
@@ -127,7 +119,7 @@ class Nx3D(ShowBase):
         state_trans_func: Optional[Callable[[nx.Graph, int, float], Any]] = None,
     ):
         ShowBase.__init__(self)
-        self.g = deepcopy(graph)
+        self.g = graph
         self.verbose = verbose
 
         node_fp = FILES.get("node")
@@ -155,19 +147,19 @@ class Nx3D(ShowBase):
             edge_labels = {ed: str(ed) for ed in self.g.edges}
 
         # add some lights
-        for i, dl in enumerate(DEFAULTS["light"]["direct"]):
+        for i, dl in enumerate(DEFAULTS["light_direct"]):
             hpr = dl["hpr"]
             dlight = DirectionalLight(f"directional_light_{i}")
             dlnp = self.render.attachNewNode(dlight)
             self.render.setLight(dlnp)
             dlnp.setHpr(*hpr)
-        for i, al in enumerate(DEFAULTS["light"]["ambient"]):
+        for i, al in enumerate(DEFAULTS["light_ambient"]):
             intensity = al["intensity"]
             alight = AmbientLight(f"ambient_light_{i}")
             alnp = self.render.attachNewNode(alight)
             self.render.setLight(alnp)
             alnp.setColor(intensity)
-        for i, pl in enumerate(DEFAULTS["light"]["point"]):
+        for i, pl in enumerate(DEFAULTS["light_point"]):
             pos = pl["pos"]
             plight = PointLight(f"point_light_{i}")
             plnp = self.render.attachNewNode(plight)
@@ -223,8 +215,8 @@ class Nx3D(ShowBase):
             text.reparentTo(self.render)
             text.setPos(tuple((p0 + p1) / 2.0))
             self.g.edges[ed]["model"] = model
-            self.g.edges[ed]["text"] = text
-            self.g.edges[ed]["text_"] = text_
+            self.g.edges[ed]["text_np"] = text
+            self.g.edges[ed]["text_tn"] = text_
 
         self._init_gui(mouse)
         if plot_axes:
@@ -340,22 +332,26 @@ class Nx3D(ShowBase):
         TODO
         apply to render
         - ed col
-        - nd lab
         - ed lab
         """
         if self.verbose:
             print(f"stateUpdateTask from {task.name}")
         self.state_trans_func(self.g, task.frame, task.time)
-        for nd in self.g:
-            elm = self.g.nodes[nd]
+        for ob, kind in chain(
+            zip(self.g.nodes, repeat("node")), zip(self.g.edges, repeat("edge"))
+        ):
+            if kind == "node":
+                elm = self.g.nodes[ob]
+            else:
+                elm = self.g.edges[ob]
             assert all(isinstance(x, NodePath) for x in (elm["model"], elm["text_np"]))
             assert isinstance(elm["text_tn"], TextNode)
             utils.set_color(elm["model"], elm["color"])
             elm["text_tn"].setText(elm["label"])
-        # TODO
         # for ed in self.g.edges:
-        #     utilsself.g.edges[ed]['color']
-        #     self.g.edges[ed]['label']
+        #     elm = self.g.edges[ed]
+        #     utils.set_color(elm["model"], elm["color"])
+        #     elm["text_tn"].setText(elm["label"])
         return Task.again
 
     def guiUpdateTask(self, task):
@@ -390,9 +386,9 @@ class Nx3D(ShowBase):
         out_button = KeyboardButton.ascii_key("o")
         is_down = self.mouseWatcherNode.is_button_down
         dt = globalClock.get_dt()  # noqa: F821
-        speed_rad = DEFAULTS["speed"]["radius"]
-        speed_phi = DEFAULTS["speed"]["phi"]
-        speed_theta = DEFAULTS["speed"]["theta"]
+        speed_rad = DEFAULTS["speed_radius"]
+        speed_phi = DEFAULTS["speed_phi"]
+        speed_theta = DEFAULTS["speed_theta"]
         delta_rad = 0
         delta_phi = 0
         delta_theta = 0
