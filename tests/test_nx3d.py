@@ -6,4 +6,4 @@ def test_import():
 
 
 def test_instantiation(g):
-    _ = nx3d.Nx3D(g, windowType="offscreen")
+    _ = nx3d.Nx3D(g, windowType="none")

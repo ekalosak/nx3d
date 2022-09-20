@@ -311,13 +311,14 @@ class Nx3D(ShowBase):
         self.disableMouse()
         bd = self.render.getBounds()
         rad = np.linalg.norm(bd.getApproxCenter()) + bd.getRadius()
-        fov = min(self.camLens.fov)  # angle in degrees
+        fov = min(self.camLens.fov) if self.camLens else 45
         radians_fov = fov / 180 * pi
         self.initial_camera_radius = rad / tan(radians_fov) * 1.75
-        self.camera.setPos(0, -self.initial_camera_radius, 0)
         self.cam_radius = self.initial_camera_radius
         self.cam_theta = 0.0
         self.cam_phi = 0.0
+        if self.camera:
+            self.camera.setPos(0, -self.initial_camera_radius, 0)
         self.taskMgr.add(self.keyboardCameraTask, "KeyboardCameraTask")
 
     def _init_axes(self, fn):
@@ -371,6 +372,8 @@ class Nx3D(ShowBase):
 
     def guiUpdateTask(self, task):
         """write diagnostic info to gui"""
+        if self.camera is None:
+            return
         rot = "camera rotation: "
         pos = "camera position: "
         rot_ = rot + str(self.camera.getHpr())
