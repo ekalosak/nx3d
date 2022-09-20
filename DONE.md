@@ -1,2 +1,3 @@
 - NX-5 P2 heterogeneous sizes and colors on initialization
   - won't do, heterogeneous attr to be set using NX-11 interface
+- NX-22 P3 implement state transition functionality for edge color and labels

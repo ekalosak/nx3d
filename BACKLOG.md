@@ -20,3 +20,6 @@
 - NX-19 P5 fix frame increment and time increment inputs to `state_trans_func`
   - di is always 0
   - dt is incorrect value i.e. task.time for delay task does not appear to be the delta time between executions
+- NX-23 P5 press esc to quit
+- NX-21 P5 camera controls not theta and phi but dx and dy relative to the tangent plane of the sphere
+- NX-20 P5 default spin for graph diffusion example
