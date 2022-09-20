@@ -6,7 +6,7 @@
 [![-missing build status-](https://img.shields.io/github/workflow/status/ekalosak/nx3d/Build%20nx3d%20and%20publish%20to%20PyPi)](https://github.com/ekalosak/nx3d/actions)
 
 ![-missing project maturity-](https://img.shields.io/badge/status-experimental-brightgreen)
-![-missing download count-](https://img.shields.io/pypi/dw/nx3d)
+[![-missing download count-](https://img.shields.io/pypi/dw/nx3d)](https://pypistats.org/packages/nx3d)
 
 The missing 3D plotting functionality for the excellent `networkx` Python package.
 
