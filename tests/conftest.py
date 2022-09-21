@@ -1,12 +1,13 @@
 import networkx as nx
-from pytest import fixture
+import pytest
 
 
-@fixture
+@pytest.fixture
 def g():
     return nx.frucht_graph()
 
 
-@fixture
-def n() -> int:
-    return 16
+# @pytest.fixture(params=[1, 2, 4, 8, 16])
+@pytest.fixture(params=[4])
+def n(request) -> int:
+    return request.param
