@@ -25,7 +25,7 @@ from nx3d import utils
 from nx3d.types import Pos3
 
 FILES = {
-    "node": Path(__file__).parent / "data/icosphere.egg",
+    "node": Path(__file__).parent / "data/icosphere_2.egg",
     "edge": Path(__file__).parent / "data/cylinder.egg",
     "edge_directed": Path(__file__).parent / "data/cone.egg",
 }
@@ -44,10 +44,10 @@ EPS = 1e-6  # numerical non-zero
 UPS = 32  # updates per second to state
 
 DEFAULTS = dict(
-    node_shape=0.9,
+    node_shape=0.8,
     node_color=(0.4, 0, 0.3, 1),
     node_label_color=(0, 1, 0, 1),
-    edge_radius=1.75,
+    edge_radius=0.55,
     edge_color=(0.3, 0.3, 0.3, 0.5),
     edge_label_color=(0, 1, 0, 1),
     speed_theta=96.0,
@@ -56,6 +56,7 @@ DEFAULTS = dict(
     light_direct=[{"hpr": (0, -20, 0)}, {"hpr": (180, -20, 0)}],
     light_ambient=[{"intensity": 0.3}],
     light_point=[{"pos": (0, 0, 0)}],
+    state_trans_freq=1.0,
 )
 
 
@@ -113,7 +114,7 @@ class Nx3D(ShowBase):
         verbose=False,
         autolabel=False,
         mouse=False,
-        state_trans_freq: float = 1.0,
+        state_trans_freq: float = DEFAULTS["state_trans_freq"],
         state_trans_func: Optional[Callable[[nx.Graph, int, float], Any]] = None,
         **kwargs,
     ):
@@ -143,8 +144,13 @@ class Nx3D(ShowBase):
 
         # init positions
         if pos is None:
+            print("creating default pos")
             pos_scale = 2.0 * sqrt(len(self.g.nodes))
-            pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
+            if not isinstance(self.g, nx.Graph):
+                _g = self.g.to_undirected()
+            else:
+                _g = self.g.copy(as_view=True)
+            pos = nx.spring_layout(_g, dim=3, scale=pos_scale)
         if not all(len(p) == 3 for p in pos.values()):
             raise ValueError("pos must be 3d, use the dim=3 kwarg in nx layouts")
 

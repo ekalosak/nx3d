@@ -33,4 +33,6 @@ def demo(**kwargs):
         game_of_life_example(**kwargs)
     else:
         g = nx.frucht_graph()
+        if kwargs.pop("directed", False):
+            g = g.to_directed()
         plot(g, **kwargs)
