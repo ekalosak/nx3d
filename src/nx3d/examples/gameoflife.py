@@ -76,8 +76,12 @@ def _do_life(g: nx.Graph, di: int, dt: float):
     vals = {}
     for nd in g:
         live_nbrs = 0
+        nbrs = []
         for nbr, _ in g.adjacency():
+            nbrs.append(nbr)
             live_nbrs += g.nodes[nbr]["val"]
+        print(f"{nd} has nbrs {nbrs}")
+        print(f"{nd} has live_nbrs {live_nbrs}")
         if live_nbrs == 3:
             vals[nd] = 1
         elif g.nodes[nd]["val"] and live_nbrs == 2:
