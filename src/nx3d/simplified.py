@@ -1,7 +1,7 @@
 import networkx as nx
 
 from nx3d.core import Nx3D
-from nx3d.examples import diffusion_example
+from nx3d.examples import diffusion_example, game_of_life_example
 
 
 def plot(g: nx.Graph, debug=False, **kwargs):
@@ -29,6 +29,8 @@ def demo(**kwargs):
     """Runs a demo visualization. Good for checking that your installation worked."""
     if kwargs.pop("diffusion", False):
         diffusion_example(**kwargs)
+    elif kwargs.pop("life", False):
+        game_of_life_example(**kwargs)
     else:
         g = nx.frucht_graph()
         plot(g, **kwargs)
