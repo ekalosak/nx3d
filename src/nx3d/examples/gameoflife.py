@@ -12,58 +12,55 @@ import numpy as np
 from nx3d.core import Nx3D
 
 
-def _init_graph(g):
-    """Initialize the game board"""
-    for nd in g.nodes:
-        elm = g.nodes[nd]
-        color = [random.random() * 0.8, random.random() * 0.8, random.random() * 0.8, 1]
-        elm["color"] = tuple(color)
-        elm["label"] = f"{(sum(color) - 1):.4f}"
-    for ed in g.edges:
-        col0 = np.array(g.nodes[ed[0]]["color"])
-        col1 = np.array(g.nodes[ed[1]]["color"])
-        color = (col0 + col1) / 2
-        g.edges[ed]["color"] = tuple(color)
-        g.edges[ed]["label"] = f"{(sum(color)):.3f}"
+def _grid_neighbors_2d(nd, size):
+    """handle edge cases for a finite grid"""
+    deltas = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    for delta in deltas:
+        y = nd[0] + delta[0]
+        x = nd[1] + delta[1]
+        if x < 0 or y < 0 or x >= size or y >= size:
+            continue
+        yield (y, x)
 
 
-def _diffuse(g: nx.Graph, di: int, dt: float):
-    """state transfer function for graph diffusion"""
-    # NOTE use out to show that di and dt are incorrect NX-19
-    out = [str(di), f"{dt:.4f}"]  # noqa: F841
-    total_delta = 0.0
-    for ed in g.edges:
-        col0 = np.array(g.nodes[ed[0]]["color"])
-        col1 = np.array(g.nodes[ed[1]]["color"])
-        dc = col0 - col1
-        total_delta += abs(dc).sum()
-        new_col0 = col0 - dc * RATE
-        new_col1 = col1 + dc * RATE
-        g.nodes[ed[0]]["color"] = tuple(new_col0)
-        g.nodes[ed[0]]["label"] = f"{(sum(new_col0)):.3f}"
-        g.nodes[ed[1]]["color"] = tuple(new_col1)
-        g.nodes[ed[1]]["label"] = f"{(sum(new_col1)):.3f}"
-        g.edges[ed]["color"] = tuple((new_col0 + new_col1) / 2)
-        g.edges[ed]["label"] = f"{(sum(dc)):.3f}"
-    print(f"total_delta: {total_delta}")
-    if total_delta < EPS:
-        print("\nRESTART\n")
-        _init_diff_graph(g)
+def _make_grid_2d(size: int):
+    """start from upper left origin, increase in y is down, increase in x is right"""
+    g = nx.Graph()
+    for y in range(size):
+        for x in range(size):
+            nd = (y, x)
+            g.add_node(nd)
+    for y in range(size):
+        for x in range(size):
+            n0 = (y, x)
+            for n1 in _grid_neighbors_2d(n0, size):
+                g.add_edge(n0, n1)
+    return g
 
 
-def diffusion_example(**kwargs):
-    """This function opens a popup showing how a graph diffusion can be rendered. You can run it from your shell as
-    follows:
+def _make_board(kind: str, size: int):
+    if kind == "2Dgrid":
+        return _make_grid_2d(size)
+    else:
+        raise ValueError(f"board kind {kind} not supported")
+
+
+def _do_life(g: nx.Graph, di: int, dt: float):
+    assert 0
+
+
+def game_of_life_example(**kwargs):
+    """This function opens a popup that runs the Game of Life on various graphs
 
     ```
-    python -m nx3d diffusion
+    python -m nx3d life
     ```
 
     Args:
         kwargs: passed to Nx3D.__init__
     """
-    g = nx.frucht_graph()
-    pos = kwargs.pop("pos", None)
-    _init_diff_graph(g)
-    app = Nx3D(g, pos=pos, state_trans_func=_diffuse, **kwargs)
+    g = _make_board("2Dgrid", 48)
+    for nd in g.nodes:
+        assert len(g.nodes[nd]["pos"]) == 3
+    app = Nx3D(g, state_trans_func=_do_life, **kwargs)
     app.run()
