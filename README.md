@@ -13,29 +13,25 @@ The missing 3D plotting functionality for the excellent `networkx` Python packag
 ![-missing gif of frucht graph-](https://raw.githubusercontent.com/ekalosak/nx3d/cf473d1dfab506ecd4044f4693c09aea0e1153ba/data/frucht.gif)
 
 # Installation
-In your shell:
 ```sh
 pip install nx3d
 ```
 
-# Quickstart
-After installation,
+## Check your installation
 
-## From your shell
+### Basic demo
 ```sh
-python -m nx3d autolabel
+python -m nx3d
 ```
 
-or
-
+### Diffusion demo
 ```sh
 python -m nx3d diffusion
 ```
 
-## In your Python REPL
-```python
-import nx3d
-nx3d.demo()
+### Game of Life demo
+```sh
+python -m nx3d life
 ```
 
 # Usage
@@ -48,42 +44,6 @@ g = nx.frucht_graph()
 nx3d.plot(g)
 ```
 
-# Contribute
-Thank you for considering contributing to `nx3d`.
-
-## Clone the code
-
-## Setup the development environment
-
-You can do this as you like, though you might consider:
-1. Install `poetry`
-2. Run `poetry shell`
-3. Run `poetry install`
-4. Verify the installation by running `python -m nx3d`
-
-## Set up pre-commit
-The pre-commit hooks defined in `.pre-commit-config.yaml` apply linting and formatting to keep the project clean. Please
-use the pre-commit hooks to keep code quality high.
-
-From this project's root, initialize pre-commit as follows:
-
-```sh
-pre-commit install
-pre-commit run -a
-```
-
-## Update the docs
-1. Update the inline docstrings and/or the files in the docs/ directory.
-2. Navigate to the docs/ dir and run `make html` to preview your changes.
-3. When you cut a PR, the CI will trigger a ReadTheDocs build.
-4. When merged, the CD will publish those docs (3).
-
-### First time updating the docs
-I used `brew install python-sphinx`, see installation instructions on [www.sphinx-doc.org](https://www.sphinx-doc.org/en/master/usage/installation.html).
-
-## Hack on some code
-See TODO.md for open tasks.
-
-## Open a PR
-When a PR is created or updated, code checks will be run.
-When a PR is merged, the code will be pushed to PyPi and the docs to ReadTheDocs.
+# Next steps
+Check out the [docs](https://nx3d.readthedocs.io/en/latest/) for tutorials, how-to-guides, explanations, and reference
+material.

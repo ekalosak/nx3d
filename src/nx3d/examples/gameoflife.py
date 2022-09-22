@@ -130,7 +130,7 @@ def game_of_life_example(**kwargs):
     Args:
         kwargs: passed to Nx3D.__init__
     """
-    g = _make_board("2Dgrid", 32)
+    g = _make_board("2Dgrid", 24)
     for nd in g.nodes:
         assert len(g.nodes[nd]["pos"]) == 3
     app = Nx3D(g, state_trans_func=_do_life, **kwargs)
