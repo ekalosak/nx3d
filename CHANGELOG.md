@@ -1,3 +1,10 @@
+# Wed Sep 22 2022
+22.9.10
+- moved issue tracking from text to github issues
+- added a variety of "markers" for nodes (rather than just the icosahedron)
+- refactored examples to handle n>1 examples
+- game-of-life is WIP, has lots of tests and big dreams but nothing working yet
+
 # Sun Sep 19 2022
 22.9.9
 - no longer deepcopying the graph passed to the plotting function

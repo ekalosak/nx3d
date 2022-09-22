@@ -146,11 +146,7 @@ class Nx3D(ShowBase):
         if pos is None:
             print("creating default pos")
             pos_scale = 2.0 * sqrt(len(self.g.nodes))
-            if not isinstance(self.g, nx.Graph):
-                _g = self.g.to_undirected()
-            else:
-                _g = self.g.copy(as_view=True)
-            pos = nx.spring_layout(_g, dim=3, scale=pos_scale)
+            pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
         if not all(len(p) == 3 for p in pos.values()):
             raise ValueError("pos must be 3d, use the dim=3 kwarg in nx layouts")
 
