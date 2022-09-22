@@ -31,12 +31,8 @@ What it isn't
 
 Code of Conduct
 ------------------------------------
-Any x-phobia-like behavior will not fly.
-
-More formally, I'll enforce the
-`Contributor Covenant <https://www.contributor-covenant.org/version/2/1/code_of_conduct/>`_. Feel free to contact me
-(helloateric att gmaaail dottt comj) with issues. It's better to get this settled before any issues arise, so please
-excuse the cart-before-horse nature of setting a code of conduct this early into the project's lifecycle.
+Because it's the internet, this kind of thing is necessary:
+`Contributor Covenant <https://www.contributor-covenant.org/version/2/1/code_of_conduct/>`_
 
 .. toctree::
    :maxdepth: 1
