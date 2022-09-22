@@ -27,7 +27,6 @@ def _init_diff_graph(g):
 
 def _diffuse(g: nx.Graph, di: int, dt: float):
     """state transfer function for graph diffusion"""
-    # NOTE use out to show that di and dt are incorrect NX-19
     out = [str(di), f"{dt:.4f}"]  # noqa: F841
     total_delta = 0.0
     for ed in g.edges:

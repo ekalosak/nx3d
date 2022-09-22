@@ -4,7 +4,9 @@
 - moved issue tracking from text to github issues
 - added a variety of "markers" for nodes (rather than just the icosahedron)
 - refactored examples to handle n>1 examples
-- game-of-life is WIP, has lots of tests and big dreams but nothing working yet
+- working 2d grid game of life example
+- docs got a full makeover
+- implemented digraph support
 
 # Sun Sep 19 2022
 22.9.9

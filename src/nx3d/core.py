@@ -82,13 +82,13 @@ class Nx3D(ShowBase):
             https://docs.panda3d.org/1.10/python/reference/panda3d.core.NodePath?highlight=setpos#panda3d.core.NodePath.setPos
         - 'label': str
         - 'label_color': Vec4
-        for edges:
-            - 'radius': float
-        for nodes:
-            - 'shape': Vec3
         - 'pos': Vec3, note that dynamic positions aren't supported yet, see https://github.com/ekalosak/nx3d/issues/19
+        for edges:
+            - 'radius': float, same note as pos
+        for nodes:
+            - 'shape': Vec3, same note as pos
 
-    Note that these special attributes may be overwritten in place.
+    Note that these special attributes will be overwritten in place, especially when provided a state_trans_func.
 
     For more info, see :doc:`usage`.
 
