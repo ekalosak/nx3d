@@ -2,3 +2,4 @@
 ignore = E501
 per-file-ignores =
   src/nx3d/__init__.py:F401
+  src/nx3d/examples/__init__.py:F401

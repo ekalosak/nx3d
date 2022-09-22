@@ -1,3 +1,13 @@
+# Wed Sep 22 2022
+22.9.10
+- added scipy as a dependency to handle sparse solvers for positions when there are > 500 nodes (see networkx spring layout source)
+- moved issue tracking from text to github issues
+- added a variety of "markers" for nodes (rather than just the icosahedron)
+- refactored examples to handle n>1 examples
+- working 2d grid game of life example
+- docs got a full makeover
+- implemented digraph support
+
 # Sun Sep 19 2022
 22.9.9
 - no longer deepcopying the graph passed to the plotting function

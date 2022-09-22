@@ -16,7 +16,7 @@ sys.path.append(str(Path(__file__).parent / "../src"))
 project = "nx3d"
 copyright = "2022, Eric Kalosa-Kenyon"
 author = "Eric Kalosa-Kenyon"
-release = "22.9.9"
+release = "22.9.10"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -31,4 +31,4 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
-html_static_path = ["_static"]
+html_static_path = []
