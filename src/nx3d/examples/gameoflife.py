@@ -11,12 +11,17 @@ The rules are:
 
 Interior nodes have 8 neighbors
 """
+import itertools as itt
+import random
+
 import networkx as nx
 import numpy as np
 
 from nx3d.core import Nx3D
 
 BOARD_KINDS = ["2Dgrid"]
+COLOR_DEAD = (0.2, 0.2, 0.2, 1)
+COLOR_LIVE = (0.8, 0.8, 0.8, 1)
 
 
 def _grid_neighbors_2d(nd, size):
@@ -40,7 +45,7 @@ def _make_grid_2d(size: int):
         for x in range(size):
             nd = (y, x)
             g.add_node(nd)
-            g.nodes[nd]["color"] = (0.9, 0.9, 0.9, 1)
+            g.nodes[nd]["color"] = COLOR_DEAD
             g.nodes[nd]["pos"] = np.array((int(x - size / 2), 0, int(size / 2 - y)))
     for y in range(size):
         for x in range(size):
@@ -55,7 +60,7 @@ def _update_colors(g):
     """black if alive else white"""
     for nd in g:
         val = g.nodes[nd]["val"]
-        g.nodes[nd]["color"] = (0, 0, 0, 1) if val else (1, 1, 1, 0)
+        g.nodes[nd]["color"] = COLOR_LIVE if val else COLOR_DEAD
 
 
 def _grid_to_numpy(g):
@@ -76,17 +81,29 @@ def _clear_board(g):
         g.nodes[nd]["val"] = 0
 
 
+def _reset_grid(g, n_live: int):
+    _clear_board(g)
+    bd = _grid_to_numpy(g)
+    yixs = range(bd.shape[0])
+    xixs = range(bd.shape[1])
+    ixs = list(itt.product(yixs, xixs))
+    for ix in random.sample(ixs, k=n_live):
+        g.nodes[ix]["val"] = 1
+
+
 def _make_board(kind: str, size: int):
     if kind == "2Dgrid":
         g = _make_grid_2d(size)
+        _reset_grid(g, 0)
     else:
         raise ValueError(f"board kind {kind} not supported")
-    _clear_board(g)
     _update_colors(g)
     return g
 
 
 def _do_life(g: nx.Graph, di: int, dt: float):
+    if all(g.nodes[nd]["val"] == 0 for nd in g):
+        _reset_grid(g, n_live=len(g) // 4)
     vals = {}
     for nd, nbrsdict in g.adjacency():
         live_nbrs = 0
@@ -100,6 +117,7 @@ def _do_life(g: nx.Graph, di: int, dt: float):
             vals[nd] = 0
     for nd in g:
         g.nodes[nd]["val"] = vals[nd]
+    _update_colors(g)
 
 
 def game_of_life_example(**kwargs):
@@ -112,7 +130,7 @@ def game_of_life_example(**kwargs):
     Args:
         kwargs: passed to Nx3D.__init__
     """
-    g = _make_board("2Dgrid", 16)
+    g = _make_board("2Dgrid", 32)
     for nd in g.nodes:
         assert len(g.nodes[nd]["pos"]) == 3
     app = Nx3D(g, state_trans_func=_do_life, **kwargs)
