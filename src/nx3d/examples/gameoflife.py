@@ -11,10 +11,7 @@ The rules are:
 
 Interior nodes have 8 neighbors
 """
-import random
-
 import networkx as nx
-import numpy as np
 
 from nx3d.core import Nx3D
 
