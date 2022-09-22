@@ -144,9 +144,15 @@ class Nx3D(ShowBase):
 
         # init positions
         if pos is None:
-            print("creating default pos")
-            pos_scale = 2.0 * sqrt(len(self.g.nodes))
-            pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
+            if all("pos" in self.g.nodes[nd] for nd in self.g):
+                pos = {nd: self.g.nodes[nd]["pos"] for nd in self.g}
+            else:
+                if verbose:
+                    print("creating default pos")
+                    if len(self.g) > 256:
+                        print("this may take a while for large graphs")
+                pos_scale = 2.0 * sqrt(len(self.g.nodes))
+                pos = nx.spring_layout(self.g, dim=3, scale=pos_scale)
         if not all(len(p) == 3 for p in pos.values()):
             raise ValueError("pos must be 3d, use the dim=3 kwarg in nx layouts")
 
@@ -156,7 +162,7 @@ class Nx3D(ShowBase):
             self.g.nodes[nd]["color"] = self.g.nodes[nd].get("color", node_color)
             self.g.nodes[nd]["shape"] = self.g.nodes[nd].get("shape", node_color)
             self.g.nodes[nd]["label"] = self.g.nodes[nd].get(
-                "label", node_labels.get(nd)
+                "label", node_labels.get(nd, "")
             )
             self.g.nodes[nd]["label_color"] = self.g.nodes[nd].get(
                 "label_color", node_label_color
@@ -165,7 +171,7 @@ class Nx3D(ShowBase):
             self.g.edges[ed]["color"] = self.g.edges[ed].get("color", edge_color)
             self.g.edges[ed]["radius"] = self.g.edges[ed].get("radius", edge_color)
             self.g.edges[ed]["label"] = self.g.edges[ed].get(
-                "label", edge_labels.get(nd)
+                "label", edge_labels.get(ed, "")
             )
             self.g.edges[ed]["label_color"] = self.g.edges[ed].get(
                 "label_color", edge_label_color

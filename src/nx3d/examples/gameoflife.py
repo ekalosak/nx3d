@@ -12,6 +12,7 @@ The rules are:
 Interior nodes have 8 neighbors
 """
 import networkx as nx
+import numpy as np
 
 from nx3d.core import Nx3D
 
@@ -39,11 +40,14 @@ def _make_grid_2d(size: int):
         for x in range(size):
             nd = (y, x)
             g.add_node(nd)
+            g.nodes[nd]["color"] = (0.9, 0.9, 0.9, 1)
+            g.nodes[nd]["pos"] = np.array((int(x - size / 2), 0, int(size / 2 - y)))
     for y in range(size):
         for x in range(size):
             n0 = (y, x)
             for n1 in _grid_neighbors_2d(n0, size):
                 g.add_edge(n0, n1)
+                g.edges[(n0, n1)]["visible"] = 0
     return g
 
 
@@ -52,6 +56,19 @@ def _update_colors(g):
     for nd in g:
         val = g.nodes[nd]["val"]
         g.nodes[nd]["color"] = (0, 0, 0, 1) if val else (1, 1, 1, 0)
+
+
+def _grid_to_numpy(g):
+    my = max(y for y, _ in g)
+    mx = max(x for _, x in g)
+    bd = np.empty((my + 1, mx + 1))
+    for nd in g:
+        bd[nd] = g.nodes[nd]["val"]
+    return bd
+
+
+def print_board(g):
+    print(_grid_to_numpy(g))
 
 
 def _clear_board(g):
@@ -71,14 +88,10 @@ def _make_board(kind: str, size: int):
 
 def _do_life(g: nx.Graph, di: int, dt: float):
     vals = {}
-    for nd in g:
+    for nd, nbrsdict in g.adjacency():
         live_nbrs = 0
-        nbrs = []
-        for nbr, _ in g.adjacency():
-            nbrs.append(nbr)
-            live_nbrs += g.nodes[nbr]["val"]
-        print(f"{nd} has nbrs {nbrs}")
-        print(f"{nd} has live_nbrs {live_nbrs}")
+        nbrs = list(nbrsdict.keys())
+        live_nbrs = sum(g.nodes[nbr]["val"] for nbr in nbrs)
         if live_nbrs == 3:
             vals[nd] = 1
         elif g.nodes[nd]["val"] and live_nbrs == 2:
@@ -99,7 +112,7 @@ def game_of_life_example(**kwargs):
     Args:
         kwargs: passed to Nx3D.__init__
     """
-    g = _make_board("2Dgrid", 48)
+    g = _make_board("2Dgrid", 16)
     for nd in g.nodes:
         assert len(g.nodes[nd]["pos"]) == 3
     app = Nx3D(g, state_trans_func=_do_life, **kwargs)

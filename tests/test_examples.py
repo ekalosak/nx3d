@@ -47,21 +47,23 @@ def test_make_board(n, kind):
 
 
 @pytest.mark.parametrize("kind", gameoflife.BOARD_KINDS)
-def test_do_life(n, kind):
+def test_do_life_0(n, kind):
     g = gameoflife._make_board(kind, n)
     g.nodes[(0, 0)]["val"] = 1
     gameoflife._do_life(g, 0, 0)
     for nd in g:
         assert g.nodes[nd]["val"] == 0
 
+
+@pytest.mark.parametrize("kind", gameoflife.BOARD_KINDS)
+def test_do_life_1(n, kind):
+    g = gameoflife._make_board(kind, n)
     if n < 2:
         pass
     g.nodes[(0, 0)]["val"] = 1
     g.nodes[(1, 0)]["val"] = 1
     g.nodes[(2, 0)]["val"] = 1
     gameoflife._do_life(g, 0, 0)
-    for nd in g:
-        print((nd, g.nodes[nd]))
     assert g.nodes[(0, 0)]["val"] == 0
     assert g.nodes[(1, 0)]["val"] == 1
     assert g.nodes[(2, 0)]["val"] == 0
@@ -69,6 +71,10 @@ def test_do_life(n, kind):
     for nd in g:
         assert g.nodes[nd]["val"] == 0
 
+
+@pytest.mark.parametrize("kind", gameoflife.BOARD_KINDS)
+def test_do_life_2(n, kind):
+    g = gameoflife._make_board(kind, n)
     g.nodes[(0, 0)]["val"] = 1
     g.nodes[(2, 0)]["val"] = 1
     g.nodes[(1, 2)]["val"] = 1
