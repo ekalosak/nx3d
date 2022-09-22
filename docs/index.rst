@@ -6,7 +6,7 @@
 Welcome to nx3d's documentation!
 ================================
 
-``nx3d`` provides 3D plotting functionality for the ``networkx`` package.
+``nx3d`` provides 3D plotting functionality for the ``networkx`` Python package.
 
 The `project homepage <https://github.com/ekalosak/nx3d>`_ has quickstart instructions.
 
@@ -15,8 +15,19 @@ The `project homepage <https://github.com/ekalosak/nx3d>`_ has quickstart instru
 
 Hello world, a beginner's tutorial
 ------------------------------------
-To get started with ``nx3d``, check out the examples page. Following along with the source code for the diffusion example
+To get started with ``nx3d``, check out the :doc:`examples` page. Following along with the source code for the diffusion example
 is a good introductory tutorial.
+
+What it is
+------------------------------------
+* ``nx3d`` is a Python3 package used to produce interactive 3D visualizations of graphs `without` having to think about
+  the 3D rendering process, 3D models, the graphics engine, or anything `but` your graph.
+
+What it isn't
+------------------------------------
+
+* ``nx3d`` is not a commandline utility. While it supports some basic things like demos via ``python -m nx3d``, the CLI
+  is not supported beyond that.
 
 Code of Conduct
 ------------------------------------
@@ -28,7 +39,7 @@ More formally, I'll enforce the
 excuse the cart-before-horse nature of setting a code of conduct this early into the project's lifecycle.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    install

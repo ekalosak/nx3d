@@ -120,12 +120,12 @@ def _do_life(g: nx.Graph, di: int, dt: float):
     _update_colors(g)
 
 
-def game_of_life_example(**kwargs):
-    """This function opens a popup that runs the Game of Life on various graphs
+def game_of_life(**kwargs):
+    """This function opens a popup that runs the Game of Life.
 
-    ```
+    ``
     python -m nx3d life
-    ```
+    ``
 
     Args:
         kwargs: passed to Nx3D.__init__

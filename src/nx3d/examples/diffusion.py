@@ -49,13 +49,13 @@ def _diffuse(g: nx.Graph, di: int, dt: float):
         _init_diff_graph(g)
 
 
-def diffusion_example(**kwargs):
+def diffusion(**kwargs):
     """This function opens a popup showing how a graph diffusion can be rendered. You can run it from your shell as
     follows:
 
-    ```
+    ``
     python -m nx3d diffusion
-    ```
+    ``
 
     Args:
         kwargs: passed to Nx3D.__init__
