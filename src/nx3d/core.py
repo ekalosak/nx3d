@@ -1,6 +1,7 @@
 """ This source provides functionality for plotting nodes and edges of nx.Graph objects in 3D.
 """
 
+from dataclasses import dataclass
 from math import cos, isclose, pi, sin, sqrt, tan
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
@@ -43,21 +44,22 @@ mouse3 drag - rotate
 EPS = 1e-6  # numerical non-zero
 UPS = 32  # updates per second to state
 
-DEFAULTS = dict(
-    node_shape=0.8,
-    node_color=(0.4, 0, 0.3, 1),
-    node_label_color=(0, 1, 0, 1),
-    edge_radius=0.55,
-    edge_color=(0.3, 0.3, 0.3, 0.5),
-    edge_label_color=(0, 1, 0, 1),
-    speed_theta=96.0,
-    speed_phi=96.0,
-    speed_radius=36.0,
-    light_direct=[{"hpr": (0, -20, 0)}, {"hpr": (180, -20, 0)}],
-    light_ambient=[{"intensity": 0.3}],
-    light_point=[{"pos": (0, 0, 0)}],
-    state_trans_freq=1.0,
-)
+
+@dataclass
+class Defaults:
+    node_shape: float = 0.8
+    node_color: Vec4 = (0.4, 0, 0.3, 1)
+    node_label_color: Vec4 = (0, 1, 0, 1)
+    edge_radius: float = 0.55
+    edge_color: Vec4 = (0.3, 0.3, 0.3, 0.5)
+    edge_label_color: Vec4 = (0, 1, 0, 1)
+    speed_theta: float = 96.0
+    speed_phi: float = 96.0
+    speed_radius: float = 36.0
+    light_direct = [{"hpr": (0, -20, 0)}, {"hpr": (180, -20, 0)}]
+    light_ambient = [{"intensity": 0.3}]
+    light_point = [{"pos": (0, 0, 0)}]
+    state_trans_freq: float = 1.0
 
 
 class Nx3D(ShowBase):
@@ -71,8 +73,24 @@ class Nx3D(ShowBase):
         ```
 
     Configuration is applied in the following order:
-        1. Graph attributes e.g. g.nodes[...]['color']
+        1. Special graph attributes e.g. g.nodes[...]['color']
         2. Arguments to this function
+
+    The special graph attributes are:
+        - 'color': panda3d.Vec4 with values in [0, 1]
+        - 'pos': panda3d.Vec3 in x y z order, see
+            https://docs.panda3d.org/1.10/python/reference/panda3d.core.NodePath?highlight=setpos#panda3d.core.NodePath.setPos
+        - 'label': str
+        - 'label_color': Vec4
+        for edges:
+            - 'radius': float
+        for nodes:
+            - 'shape': Vec3
+        - 'pos': Vec3, note that dynamic positions aren't supported yet, see https://github.com/ekalosak/nx3d/issues/19
+
+    Note that these special attributes may be overwritten in place.
+
+    For more info, see :doc:`usage`.
 
     Args:
         g: The graph you'd like to plot.
@@ -92,29 +110,30 @@ class Nx3D(ShowBase):
             Set attributes on graph components to update the render. If not None, the graph's nodes and edges must be
             annotated with 'color' and 'label' entries in the annotation dictionary i.e. g.nodes[nd]['color'] must exist for
             all nodes.
-        kwagrs: Passed to super().__init__
+        kwargs: Passed to the base class ShowBase.
 
     Returns:
-        ShowBase: The Panda3D object capable of rendering the graph
+        direct.showbase.ShowBase.ShowBase: The Panda3D object capable of rendering the graph
+            https://docs.panda3d.org/1.10/python/reference/direct.showbase.ShowBase?highlight=showbase#module-direct.showbase.ShowBase
     """
 
     def __init__(
         self,
         graph: nx.Graph,
         pos: Optional[Pos3] = None,
-        node_color: Vec4 = DEFAULTS["node_color"],
-        node_shape: Union[float, Vec3] = DEFAULTS["node_shape"],
+        node_color: Vec4 = Defaults.node_color,
+        node_shape: Union[float, Vec3] = Defaults.node_shape,
         node_labels: dict = {},
-        node_label_color: Vec4 = DEFAULTS["node_label_color"],
-        edge_color: Vec4 = DEFAULTS["edge_color"],
-        edge_radius: Union[float, list[float]] = DEFAULTS["edge_radius"],
+        node_label_color: Vec4 = Defaults.node_label_color,
+        edge_color: Vec4 = Defaults.edge_color,
+        edge_radius: Union[float, list[float]] = Defaults.edge_radius,
         edge_labels: dict = {},
-        edge_label_color: Vec4 = DEFAULTS["edge_label_color"],
+        edge_label_color: Vec4 = Defaults.edge_label_color,
         plot_axes=False,
         verbose=False,
         autolabel=False,
         mouse=False,
-        state_trans_freq: float = DEFAULTS["state_trans_freq"],
+        state_trans_freq: float = Defaults.state_trans_freq,
         state_trans_func: Optional[Callable[[nx.Graph, int, float], Any]] = None,
         **kwargs,
     ):
@@ -180,19 +199,19 @@ class Nx3D(ShowBase):
         self.initial_pos = {nd: self.g.nodes[nd]["pos"] for nd in self.g.nodes}
 
         # init lights
-        for i, dl in enumerate(DEFAULTS["light_direct"]):
+        for i, dl in enumerate(Defaults.light_direct):
             hpr = dl["hpr"]
             dlight = DirectionalLight(f"directional_light_{i}")
             dlnp = self.render.attachNewNode(dlight)
             self.render.setLight(dlnp)
             dlnp.setHpr(*hpr)
-        for i, al in enumerate(DEFAULTS["light_ambient"]):
+        for i, al in enumerate(Defaults.light_ambient):
             intensity = al["intensity"]
             alight = AmbientLight(f"ambient_light_{i}")
             alnp = self.render.attachNewNode(alight)
             self.render.setLight(alnp)
             alnp.setColor(intensity)
-        for i, pl in enumerate(DEFAULTS["light_point"]):
+        for i, pl in enumerate(Defaults.light_point):
             pos = pl["pos"]
             plight = PointLight(f"point_light_{i}")
             plnp = self.render.attachNewNode(plight)
@@ -202,34 +221,34 @@ class Nx3D(ShowBase):
         # init 3d models
         for i, nd in enumerate(self.g.nodes):
             pid = f"node_{i}"
-            model: NodePath = self._init_panda3d_model(pid, node_fp)
-            model.reparentTo(self.render)
-            model.setScale(node_shape)
-            utils.set_color(model, self.g.nodes[nd]["color"])
-            model.setPos(*self.g.nodes[nd]["pos"])
+            node: NodePath = self._init_panda3d_model(pid, node_fp)
+            node.reparentTo(self.render)
+            node.setScale(node_shape)
+            utils.set_color(node, self.g.nodes[nd]["color"])
+            node.setPos(*self.g.nodes[nd]["pos"])
             tpid = f"node_{i}_text"
             text, text_ = self._init_panda3d_text(
                 tpid, self.g.nodes[nd]["label"], self.g.nodes[nd]["label_color"]
             )
-            text.reparentTo(model)
-            text.setScale(tuple(1 / sc for sc in model.getScale()))
-            text.setZ(model.getBounds().getRadius() * 1.1)
-            self.g.nodes[nd]["model"] = model
+            text.reparentTo(node)
+            text.setScale(tuple(1 / sc for sc in node.getScale()))
+            text.setZ(node.getBounds().getRadius() * 1.1)
+            self.g.nodes[nd]["model"] = node
             self.g.nodes[nd]["text_np"] = text
             self.g.nodes[nd]["text_tn"] = text_
 
         for i, ed in enumerate(self.g.edges):
             pid = f"edge_{i}"
-            model: NodePath = self._init_panda3d_model(pid, edge_fp)
-            model.reparentTo(self.render)
-            utils.set_color(model, self.g.edges[ed]["color"])
-            # TODO use model.lookAt(node)
+            edge: NodePath = self._init_panda3d_model(pid, edge_fp)
+            edge.reparentTo(self.render)
+            utils.set_color(edge, self.g.edges[ed]["color"])
+            # TODO use edge.lookAt(node)
             # rotate into place
             p0 = self.g.nodes[ed[0]]["pos"]
             p1 = self.g.nodes[ed[1]]["pos"]
-            model.setPos(*p0)
+            edge.setPos(*p0)
             dist = sqrt(((p0 - p1) ** 2).sum())
-            model.setScale(edge_radius, edge_radius, dist)
+            edge.setScale(edge_radius, edge_radius, dist)
             d = np.array(p1 - p0, dtype=float)
             for ix in np.argwhere(d == 0):
                 d[ix] = EPS
@@ -240,10 +259,10 @@ class Nx3D(ShowBase):
                 pitch = np.arccos(d[2] / dist)
                 assert pitch > 0
             pitch = pitch / pi * 180
-            model.setP(pitch)
+            edge.setP(pitch)
             heading = -np.arctan(d[0] / d[1])
             heading = heading / pi * 180
-            model.setH(heading)
+            edge.setH(heading)
 
             tpid = f"edge_{i}_text"
             text, text_ = self._init_panda3d_text(
@@ -251,7 +270,7 @@ class Nx3D(ShowBase):
             )
             text.reparentTo(self.render)
             text.setPos(tuple((p0 + p1) / 2.0))
-            self.g.edges[ed]["model"] = model
+            self.g.edges[ed]["model"] = edge
             self.g.edges[ed]["text_np"] = text
             self.g.edges[ed]["text_tn"] = text_
 
@@ -412,9 +431,9 @@ class Nx3D(ShowBase):
         out_button = KeyboardButton.ascii_key("o")
         is_down = self.mouseWatcherNode.is_button_down
         dt = globalClock.get_dt()  # noqa: F821
-        speed_rad = DEFAULTS["speed_radius"]
-        speed_phi = DEFAULTS["speed_phi"]
-        speed_theta = DEFAULTS["speed_theta"]
+        speed_rad = Defaults.speed_radius
+        speed_phi = Defaults.speed_phi
+        speed_theta = Defaults.speed_theta
         delta_rad = 0
         delta_phi = 0
         delta_theta = 0

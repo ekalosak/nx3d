@@ -2,7 +2,7 @@
 - a 2D gridded finite Graph
 - a 3D gridded finite Graph
 - a 2D gridded finite Graph embedded in 3D on a sphere
-- a 2D gridded finite DiGraph embedded on a cylinder
+- a 2D gridded finite DiGraph embedded on a cylinder, taurus, mobius strip (need 2 layers z to orient), klein bottle
 
 The rules are:
 - node with 2 or 3 live neighbors lives
