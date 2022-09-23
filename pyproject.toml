@@ -32,9 +32,6 @@ black = "^22.8.0"
 isort = "^5.10.1"
 flake8 = "^5.0.4"
 mypy = "^0.971"
-Sphinx = "^5.1.1"
-sphinx-rtd-theme = "^1.0.0"
-sphinx-autodoc-typehints = "^1.19.2"
 panda3d-blend2bam = "^0.20"
 
 [tool.mypy]
