@@ -37,9 +37,6 @@ sphinx-rtd-theme = "^1.0.0"
 sphinx-autodoc-typehints = "^1.19.2"
 panda3d-blend2bam = "^0.20"
 
-[tool.poetry.extras]
-big = ["scipy"]
-
 [tool.mypy]
 exclude = ['docs/']
 

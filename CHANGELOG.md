@@ -1,3 +1,11 @@
+# Fri Sep 24 2022
+22.10.0
+- implemented multi-graph
+- edge radius no longer supported due to difficulty scaling bent edges
+- added time to gui
+- refactor of camera initialization
+- added v3 3D models
+
 # Wed Sep 22 2022
 22.9.10
 - added scipy as a dependency to handle sparse solvers for positions when there are > 500 nodes (see networkx spring layout source)
