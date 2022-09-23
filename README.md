@@ -17,12 +17,31 @@ The missing 3D plotting functionality for the excellent `networkx` Python packag
 pip install nx3d
 ```
 
-## Check your installation
+# Check your installation
 
-### Basic demo
+## The four nx.Graph classes
+
+### nx.Graph demo
 ```sh
 python -m nx3d
 ```
+
+### nx.DiGraph demo
+```sh
+python -m nx3d dir
+```
+
+### nx.MultiGraph demo
+```sh
+python -m nx3d mul
+```
+
+### nx.MultiDiGraph demo
+```sh
+python -m nx3d mul dir
+```
+
+## Dynamic graph processes
 
 ### Diffusion demo
 ```sh

@@ -1,4 +1,7 @@
 # Fri Sep 24 2022
+22.10.1
+- implemented multi di graph
+
 22.10.0
 - implemented multi-graph
 - edge radius no longer supported due to difficulty scaling bent edges
