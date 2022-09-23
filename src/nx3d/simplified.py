@@ -29,12 +29,24 @@ def plot(g: nx.Graph, debug=False, **kwargs):
 
 def demo(**kwargs):
     """Runs a demo visualization. Good for checking that your installation worked."""
+    init = nx.frucht_graph
+    if kwargs.pop("mul", False):
+        """add k copies of the edges"""
+        k = 3
+        g = nx.MultiGraph(k=k)
+        _g = init()
+        g.add_nodes_from(_g)
+        for i in range(k):
+            g.add_edges_from(_g.edges)
+    else:
+        g = init()
+
+    if kwargs.pop("dir", False):
+        g = g.to_directed()
+
     if kwargs.pop("diffusion", False):
-        diffusion(**kwargs)
+        diffusion(g, **kwargs)
     elif kwargs.pop("life", False):
         game_of_life(**kwargs)
     else:
-        g = nx.frucht_graph()
-        if kwargs.pop("directed", False):
-            g = g.to_directed()
         plot(g, **kwargs)

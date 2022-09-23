@@ -33,26 +33,30 @@ def _grid_neighbors_2d(nd, size):
                 continue
             y = nd[0] + dy
             x = nd[1] + dx
-            if x < 0 or y < 0 or x >= size or y >= size:
+            if x < 0 or y < 0 or x >= size[1] or y >= size[0]:
                 continue
             yield (y, x)
 
 
-def _make_grid_2d(size: int):
+def _make_grid_2d(size: tuple[int, int]):
     """start from upper left origin, increase in y is down, increase in x is right"""
     g = nx.Graph()
-    for y in range(size):
-        for x in range(size):
+    # g = nx.grid_2d_graph(*size)
+    print(len(g))
+    # g = nx.Graph()
+    for y in range(size[0]):
+        for x in range(size[1]):
             nd = (y, x)
             g.add_node(nd)
             g.nodes[nd]["color"] = COLOR_DEAD
-            g.nodes[nd]["pos"] = np.array((int(x - size / 2), 0, int(size / 2 - y)))
-    for y in range(size):
-        for x in range(size):
+            g.nodes[nd]["pos"] = np.array(
+                (int(x - size[0] / 2), 0, int(size[1] / 2 - y))
+            )
+    for y in range(size[0]):
+        for x in range(size[1]):
             n0 = (y, x)
             for n1 in _grid_neighbors_2d(n0, size):
                 g.add_edge(n0, n1)
-                g.edges[(n0, n1)]["visible"] = 0
     return g
 
 
@@ -91,7 +95,7 @@ def _reset_grid(g, n_live: int):
         g.nodes[ix]["val"] = 1
 
 
-def _make_board(kind: str, size: int):
+def _make_board(kind: str, size: tuple[int, int]):
     if kind == "2Dgrid":
         g = _make_grid_2d(size)
         _reset_grid(g, 0)
@@ -120,7 +124,7 @@ def _do_life(g: nx.Graph, di: int, dt: float):
     _update_colors(g)
 
 
-def game_of_life(**kwargs):
+def game_of_life(g=None, **kwargs):
     """This function opens a popup that runs the Game of Life.
 
     ``
@@ -130,7 +134,8 @@ def game_of_life(**kwargs):
     Args:
         kwargs: passed to Nx3D.__init__
     """
-    g = _make_board("2Dgrid", 24)
+    if not g:
+        g = _make_board("2Dgrid", (16, 24))
     for nd in g.nodes:
         assert len(g.nodes[nd]["pos"]) == 3
     app = Nx3D(g, state_trans_func=_do_life, **kwargs)

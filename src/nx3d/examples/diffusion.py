@@ -48,7 +48,7 @@ def _diffuse(g: nx.Graph, di: int, dt: float):
         _init_diff_graph(g)
 
 
-def diffusion(**kwargs):
+def diffusion(g=None, **kwargs):
     """This function opens a popup showing how a graph diffusion can be rendered. You can run it from your shell as
     follows:
 
@@ -59,7 +59,8 @@ def diffusion(**kwargs):
     Args:
         kwargs: passed to Nx3D.__init__
     """
-    g = nx.frucht_graph()
+    if not g:
+        g = nx.frucht_graph()
     pos = kwargs.pop("pos", None)
     _init_diff_graph(g)
     app = Nx3D(g, pos=pos, state_trans_func=_diffuse, **kwargs)
