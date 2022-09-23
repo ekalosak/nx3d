@@ -16,12 +16,17 @@ sys.path.append(str(Path(__file__).parent / "../src"))
 project = "nx3d"
 copyright = "2022, Eric Kalosa-Kenyon"
 author = "Eric Kalosa-Kenyon"
-release = "22.9.11"
+release = "22.10.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.viewcode", "sphinx.ext.napoleon"]
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.napoleon",
+    "sphinx_autodoc_typehints",
+]
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]

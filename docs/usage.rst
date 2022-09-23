@@ -9,20 +9,20 @@ But before that, an explanation of the "special attributes" ``nx3d`` uses to kee
 
 Special graph attributes
 --------------------------------------------
+
 Please note that ``nx3d`` will modify your graph in place. By default, it will assign a set of static "special
 attributes" to your graph's nodes and edges. ``nx3d`` uses these special attributes to control the state of the 3D
 render. These attributes include 'color', 'label', and so on - see the :doc:`api` page for a complete list.
 
-You can provide default values to ``nx3d.Nx3D.__init__`` e.g. with the ``edge_color`` argument. These defaults will be
-applied to your graph upon ``Nx3D`` initialization e.g. ``g.edges[e]['color'] == edge_color for e in g.edges``. But you
-don't `have` to provide defaults - you can run ``nx3d.plot(g)`` with batteries included.
+You can provide default values to ``nx3d.Nx3D.__init__`` e.g. with the ``edge_color`` argument. These static defaults
+will be applied to your graph upon ``Nx3D`` initialization e.g. ``g.edges[e]['color'] == edge_color for e in g.edges``.
+But you don't `have` to provide defaults - you can run ``nx3d.plot(g)`` with batteries included.
 
-Where the design choice to control the render state using graph attributes really shines is in ``nx3d``'s temporal graph
-process rendering. As you'll see in the "Plot my graph process" section below, you can update these attributes
-("dynamically") every ``state_trans_freq: float=1.`` seconds. These updates are automatically propagated to the 3D
-render.
+As you'll see in the "Plot my graph process" section below, you can update these attributes dynamically every
+``state_trans_freq: float=1.`` seconds. These updates are automatically propagated to the 3D render. You need only
+implement a ``state_trans_func: Callable[[nx.Graph, int, float], None]`` that updates the special attributes in place.
 
-This way, you don't even need to know what ``panda3d`` `is` to leverage its powerful 3D graphics engine in your project.
+This way, you don't need to know what ``panda3d`` is to leverage its powerful 3D graphics engine in your project.
 
 Plot my graph
 -------------------------
@@ -75,4 +75,4 @@ more details, see the :doc:`api` page - to see how to use it, read on below.
 Of course, you can bypass the Markov nature of the process by accumulating information in the graph outside the special
 attributes.
 
-For detailed examples, see the :doc:`examples` page.
+For complete code examples, see the :doc:`examples` page.

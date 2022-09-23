@@ -40,7 +40,8 @@ If you need to update project dependencies, note that that you `will` need to us
 
 4. Solve the issue you picked
 --------------------------------------
-Ok now write code. Use ``pytest`` to make sure nothing broke
+Ok now write code. Use ``pytest`` to make sure core functionality hasn't broken. Run ``python -m nx3d diffusion`` to
+confirm integration works.
 
 5. Set up pre-commit
 --------------------------------------

@@ -265,6 +265,47 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "panda3d-blend2bam"
+version = "0.20"
+description = "A tool to convert Blender blend files to Panda3D BAM files"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+panda3d = "*"
+panda3d-gltf = ">=0.6"
+
+[package.extras]
+test = ["pytest", "pylint (>=2.4.0,<2.5.0)", "pytest-pylint"]
+
+[[package]]
+name = "panda3d-gltf"
+version = "0.13"
+description = "glTF utilities for Panda3D"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+panda3d = ">=1.10.8"
+panda3d-simplepbr = ">=0.6"
+
+[[package]]
+name = "panda3d-simplepbr"
+version = "0.10"
+description = "A simple, lightweight PBR render pipeline for Panda3D"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+panda3d = ">=1.10.8"
+
+[package.extras]
+test = ["pytest-pylint", "pylint (>=2.4.0,<2.5.0)", "pytest"]
+
+[[package]]
 name = "pathspec"
 version = "0.10.1"
 description = "Utility library for gitignore style pattern matching of file paths."
@@ -440,6 +481,21 @@ lint = ["flake8 (>=3.5.0)", "flake8-comprehensions", "flake8-bugbear", "isort", 
 test = ["pytest (>=4.6)", "html5lib", "cython", "typed-ast"]
 
 [[package]]
+name = "sphinx-autodoc-typehints"
+version = "1.19.2"
+description = "Type hints (PEP 484) support for the Sphinx autodoc extension"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+Sphinx = ">=5.1.1"
+
+[package.extras]
+testing = ["covdefaults (>=2.2)", "coverage (>=6.4.2)", "diff-cover (>=6.5.1)", "nptyping (>=2.2)", "pytest (>=7.1.2)", "pytest-cov (>=3)", "sphobjinv (>=2.2.2)", "typing-extensions (>=4.3)"]
+type_comments = ["typed-ast (>=1.5.4)"]
+
+[[package]]
 name = "sphinx-rtd-theme"
 version = "1.0.0"
 description = "Read the Docs theme for Sphinx"
@@ -569,7 +625,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<3.12"
-content-hash = "6949731ab64477925ecdcd3a48e4359dd26ce8f04f8871357e8fd0a671e7cb3c"
+content-hash = "88863196faa805b54179b357a75aed361d98366e52ef689c6421f4290ada98e3"
 
 [metadata.files]
 alabaster = []
@@ -602,6 +658,9 @@ networkx = []
 numpy = []
 packaging = []
 panda3d = []
+panda3d-blend2bam = []
+panda3d-gltf = []
+panda3d-simplepbr = []
 pathspec = []
 platformdirs = [
     {file = "platformdirs-2.5.2-py3-none-any.whl", hash = "sha256:027d8e83a2d7de06bbac4e5ef7e023c02b863d7ea5d079477e722bb41ab25788"},
@@ -619,6 +678,7 @@ requests = []
 scipy = []
 snowballstemmer = []
 sphinx = []
+sphinx-autodoc-typehints = []
 sphinx-rtd-theme = []
 sphinxcontrib-applehelp = []
 sphinxcontrib-devhelp = []
