@@ -292,7 +292,8 @@ class Nx3D(ShowBase):
         fov = min(self.camLens.fov) if self.camLens else 45
         radians_fov = fov / 180 * pi
         self.initial_camera_radius = rad / tan(radians_fov) * 1.75
-        self.camera.setPos(0, -self.initial_camera_radius, 0)
+        if self.camera:
+            self.camera.setPos(0, -self.initial_camera_radius, 0)
         self.enableMouse()
 
     def _init_state_update_task(
