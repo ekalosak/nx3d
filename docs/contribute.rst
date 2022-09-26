@@ -32,6 +32,7 @@ package management:
 #. Install ``poetry`` for managing dependencies and virtual environments.
 #. Run ``poetry shell`` to open a clean shell. ``which python`` should be a poetry shim.
 #. Run ``poetry install`` to install the project, dependencies, and developer dependencies.
+#. Run ``poetry install . -e`` to install a development copy of ``nx3d``.
 
 Verify the setup by running ``python -m nx3d``. You should see a popup appear with a neat little graph widget you can
 spin around and zoom in on.
