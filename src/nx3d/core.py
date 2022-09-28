@@ -281,7 +281,8 @@ class Nx3D(ShowBase):
             heading = heading / pi * 180
             edge.setH(heading)
             if isinstance(graph, nx.MultiGraph):
-                edge.setH(edge, nk / graph.graph["k"] * 360)
+                max_k = max([ek for n, n1, ek in graph.edges])
+                edge.setH(edge, nk / (max_k * 2) * 360)
 
             # TODO use lookAt
 
