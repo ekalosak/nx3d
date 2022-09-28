@@ -13,6 +13,10 @@ The `project homepage <https://github.com/ekalosak/nx3d>`_ has quickstart instru
 .. image:: https://raw.githubusercontent.com/ekalosak/nx3d/cf473d1dfab506ecd4044f4693c09aea0e1153ba/data/frucht.gif
    :width: 400
 
+Alternatives
+------------------------------------
+Check out the lighter-weight alternatives first on the :doc:`alternatives` page.
+
 Hello world, a beginner's tutorial
 ------------------------------------
 To get started with ``nx3d``, check out the :doc:`examples` page. Following along with the source code for the diffusion example
