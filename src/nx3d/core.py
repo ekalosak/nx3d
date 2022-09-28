@@ -330,10 +330,9 @@ class Nx3D(ShowBase):
         state_trans_func,
     ):
         self.state_trans_func = state_trans_func
-        if self.state_trans_func:
-            self.taskMgr.doMethodLater(
-                state_trans_freq, self.stateUpdateTask, "StateUpdate"
-            )
+        self.taskMgr.doMethodLater(
+            state_trans_freq, self.stateUpdateTask, "StateUpdate"
+        )
 
     def _init_panda3d_model(
         self,
@@ -424,9 +423,8 @@ class Nx3D(ShowBase):
 
     def stateUpdateTask(self, task):
         """main state update loop"""
-        if self.verbose:
-            print(f"stateUpdateTask from {task.name}")
-        self.state_trans_func(self.g, task.frame, task.delayTime)
+        if self.state_trans_func:
+            self.state_trans_func(self.g, task.frame, task.delayTime)
         for elm in utils.all_elements(self.g):
             assert all(isinstance(x, NodePath) for x in (elm["model"], elm["text_np"]))
             assert isinstance(elm["text_tn"], TextNode)
