@@ -101,7 +101,10 @@ class Nx3D(ShowBase):
         edge_labels: Map from the graph's edges to string labels.
         plot_axes: Show the XYZ axes in the 3D scene
         verbose: Print diagnostic information to stdout.
-        autolabel: Use the string representation of the nx.Graphs' nodes and edges as labels.
+        autolabel: Use the string representation of both the nx.Graph's nodes and edges as labels.
+            Autolabel supercedes autolabel_nodes and autolabel_edges when True.
+        autolabel_nodes: Use the string representation of the nx.Graph's nodes as labels.
+        autolabel_edges: Use the string representation of the nx.Graph's edges as labels.
         mouse: Use mouse control rather than keyboard control.
         state_trans_freq: How often, in seconds, to apply the <state_trans_func>.
         state_trans_func: A state transfer function for <g>'s state.
@@ -129,6 +132,8 @@ class Nx3D(ShowBase):
         plot_axes=False,
         verbose=False,
         autolabel=False,
+        autolabel_nodes=False,
+        autolabel_edges=False,
         mouse=False,
         state_trans_freq: float = Defaults.state_trans_freq,
         state_trans_func: Optional[Callable[[nx.Graph, int, float], Any]] = None,
@@ -158,6 +163,19 @@ class Nx3D(ShowBase):
                 print("overwriting labels, set autolabel False if undesired")
             node_labels = {nd: str(nd) for nd in graph.nodes}
             edge_labels = {ed: str(ed) for ed in graph.edges}
+        else:
+            if autolabel_nodes:
+                if verbose and node_labels:
+                    print(
+                        "overwriting node labels, set autolabel_nodes False if undesired"
+                    )
+                node_labels = {nd: str(nd) for nd in graph.nodes}
+            if autolabel_edges:
+                if verbose and edge_labels:
+                    print(
+                        "overwriting edge labels, set autolabel_edge False if undesired"
+                    )
+                edge_labels = {ed: str(ed) for ed in graph.edges}
 
         # init positions
         if pos is None:
