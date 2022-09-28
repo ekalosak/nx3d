@@ -31,13 +31,12 @@ def demo(**kwargs):
     """Runs a demo visualization. Good for checking that your installation worked."""
     init = nx.frucht_graph
     if kwargs.pop("mul", False):
-        """add k copies of the edges"""
-        k = 3
-        g = nx.MultiGraph(k=k)
+        g = nx.MultiGraph(k=2)
         _g = init()
         g.add_nodes_from(_g)
-        for i in range(k):
+        for i in range(2):
             g.add_edges_from(_g.edges)
+        # TODO color the edges
     else:
         g = init()
 

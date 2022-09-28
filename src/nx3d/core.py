@@ -143,6 +143,7 @@ class Nx3D(ShowBase):
         self.g = graph
         self.verbose = verbose
         self.time_elapsed = 0.0
+        self._latest_key = None
 
         # init file paths
         node_fp = FILES.get("node")
@@ -298,11 +299,19 @@ class Nx3D(ShowBase):
 
         self._init_camera()
         self._init_gui(mouse)
+        self._init_keyboard_input()
         if plot_axes:
             self._init_axes(FILES["edge"])
         if not mouse:
             self._init_keyboard_camera()
         self._init_state_update_task(state_trans_freq, state_trans_func)
+
+    def _init_keyboard_input(self):
+        """register event handler for keyboard presses, update self._latest_key with keyboard input when called
+        https://docs.panda3d.org/1.10/python/programming/hardware-support/keyboard-support#keystroke-events
+        """
+        self.buttonThrowers[0].node().setKeystrokeEvent("keystroke")
+        self.accept("keystroke", self.latestKeyboardEvent)
 
     def _init_camera(self):
         self.disableMouse()
@@ -409,6 +418,10 @@ class Nx3D(ShowBase):
             scale=scale,
         )
 
+    def latestKeyboardEvent(self, keyname):
+        """record latest keystroke"""
+        self._latest_key = keyname
+
     def stateUpdateTask(self, task):
         """main state update loop"""
         if self.verbose:
@@ -506,3 +519,10 @@ class Nx3D(ShowBase):
         self.camera.setP(-self.cam_phi)
         self.camera.setH(self.cam_theta)
         return Task.cont
+
+    def flush_latest_keystroke(self) -> str:
+        """
+        see https://docs.panda3d.org/1.10/python/programming/hardware-support/keyboard-support#keystroke-events"""
+        k = self._latest_key
+        self._latest_key = None
+        return k
