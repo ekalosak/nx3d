@@ -59,7 +59,7 @@ class Defaults:
     speed_phi: float = 96.0
     speed_radius: float = 36.0
     light_direct = [{"hpr": (0, -20, 0)}, {"hpr": (180, -20, 0)}]
-    light_ambient = [{"intensity": 0.3}]
+    light_ambient = [{"intensity": 0.1}]
     light_point = [{"pos": (0, 0, 0)}]
     state_trans_freq: float = 1.0
 
@@ -120,7 +120,7 @@ class Nx3D(ShowBase):
 
     def __init__(
         self,
-        graph: Union[nx.Graph, nx.DiGraph],
+        graph: Union[nx.Graph, nx.DiGraph] = nx.tutte_graph(),
         pos: Optional[Pos3] = None,
         node_color: Vec4 = Defaults.node_color,
         node_size: float = Defaults.node_size,
@@ -252,11 +252,11 @@ class Nx3D(ShowBase):
             graph.nodes[nd]["text_np"] = text
             graph.nodes[nd]["text_tn"] = text_
 
-        for i, ed in enumerate(graph.edges):
+        for i, e in enumerate(graph.edges):
             if isinstance(graph, nx.MultiGraph):
-                n0, n1, nk = ed
+                n0, n1, ek = e
             else:
-                n0, n1 = ed
+                n0, n1 = e
             pid = f"edge_{i}"
             edge: NodePath = self._init_panda3d_model(pid, edge_fp)
             edge.reparentTo(self.render)
@@ -282,8 +282,8 @@ class Nx3D(ShowBase):
             heading = heading / pi * 180
             edge.setH(heading)
             if isinstance(graph, nx.MultiGraph):
-                max_k = max([ek for n, n1, ek in graph.edges])
-                edge.setH(edge, nk / (max_k * 2) * 360)
+                max_k = max([k for _, _, k in graph.edges])
+                edge.setH(edge, ek / max_k * 90)
 
             # TODO use lookAt
 
@@ -293,9 +293,9 @@ class Nx3D(ShowBase):
             )
             text.reparentTo(self.render)
             text.setPos(tuple((p0 + p1) / 2.0))
-            graph.edges[ed]["model"] = edge
-            graph.edges[ed]["text_np"] = text
-            graph.edges[ed]["text_tn"] = text_
+            graph.edges[e]["model"] = edge
+            graph.edges[e]["text_np"] = text
+            graph.edges[e]["text_tn"] = text_
 
         self._init_camera()
         self._init_gui(mouse)
@@ -310,8 +310,13 @@ class Nx3D(ShowBase):
         """register event handler for keyboard presses, update self._latest_key with keyboard input when called
         https://docs.panda3d.org/1.10/python/programming/hardware-support/keyboard-support#keystroke-events
         """
-        self.buttonThrowers[0].node().setKeystrokeEvent("keystroke")
-        self.accept("keystroke", self.latestKeyboardEvent)
+        if self.camera:
+            self.buttonThrowers[0].node().setKeystrokeEvent("keystroke")
+            self.accept("keystroke", self.latestKeyboardEvent)
+        else:
+            print(
+                "not initializing keystroke listener because there is no camera through which to render"
+            )
 
     def _init_camera(self):
         self.disableMouse()

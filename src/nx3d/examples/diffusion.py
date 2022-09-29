@@ -7,7 +7,7 @@ import numpy as np
 from nx3d.core import Nx3D
 
 RATE = 0.05  # scale diffusion rate per update call
-EPS = 1.35  # when total delta gets under this value, restart
+EPS = 0.18  # per node "not diffusing" game over parameter
 
 
 def _init_diff_graph(g):
@@ -23,6 +23,9 @@ def _init_diff_graph(g):
         color = (col0 + col1) / 2
         g.edges[ed]["color"] = tuple(color)
         g.edges[ed]["label"] = f"{(sum(color)):.3f}"
+    print(f"{len(g)} nodes")
+    print(f"EPS={EPS}")
+    print(f"Restart when total_delta < {EPS * len(g)}")
 
 
 def _diffuse(g: nx.Graph, di: int, dt: float):
@@ -43,7 +46,7 @@ def _diffuse(g: nx.Graph, di: int, dt: float):
         g.edges[ed]["color"] = tuple((new_col0 + new_col1) / 2)
         g.edges[ed]["label"] = f"{(sum(dc)):.3f}"
     print(f"total_delta: {total_delta}")
-    if total_delta < EPS:
+    if total_delta < EPS * len(g):
         print("\nRESTART\n")
         _init_diff_graph(g)
 
@@ -61,7 +64,6 @@ def diffusion(g=None, **kwargs):
     """
     if not g:
         g = nx.frucht_graph()
-    pos = kwargs.pop("pos", None)
     _init_diff_graph(g)
-    app = Nx3D(g, pos=pos, state_trans_func=_diffuse, **kwargs)
+    app = Nx3D(g, state_trans_func=_diffuse, **kwargs)
     app.run()
