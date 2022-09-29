@@ -1,6 +1,7 @@
 Developer Notes
 ================================================
-Not really intended for users but if you're hacking on this project maybe useful.
+These are my notes, they may be helpful to people hacking on nx3d - if you are trying to use the package, you've come
+too far.
 
 3D modeling
 -----------------------------
@@ -16,3 +17,4 @@ Units and dimensions
 In Blender base units,
 - radius of edges is 0.2
 - height of edges is 2
+- radius of node is 1

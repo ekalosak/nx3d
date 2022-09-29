@@ -17,8 +17,9 @@ render. These attributes include 'color', 'label', and so on - see the :doc:`api
 You can provide default values for render attributes to ``nx3d.Nx3D.__init__`` in the case you don't want to initialize
 them per-element yourself. For example ``app=Nx3D(my_graph, edge_color=(0, 1, 0, 1)``.
 These static defaults will be applied to your graph upon ``Nx3D`` initialization as ``g.edges[e]['color'] ==
-edge_color for e in g.edges``.  But you don't `have` to provide defaults - you can run ``nx3d.plot(g)`` with batteries
-included.
+edge_color for e in g.edges``.
+
+In case you have no preference, sensible defaults are provided so you can get started with just ``nx3d.plot(g)``.
 
 Plot my graph
 -------------------------
@@ -37,30 +38,25 @@ To plot your graph, write something like the following:
    g = make_my_graph()
    nx3d.plot(g, autolabel=True, edge_color=(0, 1, 0.5, 1))
 
-For more info on the arguments to ``nx3d.plot``, see the :doc:`api` page.
-
-As you'll see in the "Plot my graph process" section below, you can update these attributes dynamically every
-``state_trans_freq: float=1.`` seconds. These updates are automatically propagated to the 3D render independent of the
-framerate. You need only implement a ``state_trans_func: Callable[[nx.Graph, int, float], None]`` that updates the
-render attributes in place. You should make sure the state_trans_func doesn't take too long because it does block
-the frame update rate - but for these examples that won't matter.
-
-Plot my graph process
+Animate my graph process
 -------------------------
 
-To change the graph over time, the ``nx3d.Nx3D`` class has an optional argument for a state transition function. For
-more details, see the :doc:`api` page. The following is an example usage of the state transition functionality:
+You can update render attributes dynamically by providing a ``state_trans_func: Callable[[nx.Graph, int, float],
+None]``. This function, if provided, will update the graph in place every ``state_trans_freq: float=1.`` seconds. The
+updated render attributes are automatically propagated to the 3D render with the built-in ``Nx3D.stateUpdateTask`` every
+time the main loop ticks. With that in mind, you should make sure the ``state_trans_func`` doesn't take too long because
+it does block the frame update rate.
 
 .. code-block:: python
 
    import networkx as nx
    import nx3d
 
-   def my_graph_markov_process(g: nx.Graph, di: int, dt: float):
+   def my_graph_process(g: nx.Graph, di: int, dt: float):
       """ update the render graph attributes in place, for a list of render attributes, see the API page """
-      for nd in g:
-          g.nodes[nd]['my_val'] += sum(nbrdict['my_val'] for nbrdict in g[nd].values())
-          g.nodes[nd]['label'] = str(g.nodes[nd]['my_val'])
+      for n, nd in g.nodes(data=True):
+          nd['my_val'] += sum(g.nodes[n1]['my_val'] for n1 in g[n])
+          nd['label'] = str(nd['my_val']
 
    def _init_my_graph(g):
       for nd in g:
@@ -74,17 +70,27 @@ more details, see the :doc:`api` page. The following is an example usage of the 
       state_trans_func=my_graph_markov_process,
    )
 
-You can bypass the Markov nature of the process by accumulating information in the graph outside the render
-attributes.
+Give me the main loop
+-------------------------
+
+If you want this control, you should be ready to dig into the Panda3D docs - there is more detailed information about
+how Nx3D's base class ShowBase is executed. In short, you don't need to use the ``app.run()`` mainloop that's built in
+to ShowBase. For example, a trivial main loop is:
 
 .. code-block:: python
-
    import networkx as nx
    import nx3d
 
-   def my_graph_process(g: nx.Graph, di: int, dt: float):
-      """ for example if you want an AR1 ARIMA model """
-      g.graph['t-1'] = g.copy()
-      ...
+   FPS = 32
 
+   g = nx.erdos_renyi_graph(100,0.15)
+   app = Nx3D(g)
+
+   while 1:
+      app.taskMgr.step()
+      time.sleep(1 / FPS)
+
+More information
+-------------------------
 For complete code examples, see the :doc:`examples` page.
+For more detail on the arguments to the functions described on this page, see the :doc:`api` page.
