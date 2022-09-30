@@ -238,6 +238,14 @@ testing = ["pytest-benchmark", "pytest"]
 dev = ["tox", "pre-commit"]
 
 [[package]]
+name = "pmw"
+version = "2.1.1"
+description = "Python Megawidgets"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "py"
 version = "1.11.0"
 description = "library with cross-python path, ini-parsing, io, code, log facilities"
@@ -322,7 +330,7 @@ python-versions = ">=3.7"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<3.12"
-content-hash = "a3b2f96ad5e325687355e9aae8c0d5685d7bc59bd83d9749685532ea9ad6e258"
+content-hash = "6eebb03b403914cc8843d5288291cfa77a6c52b21a33cdfec602adbce16a1603"
 
 [metadata.files]
 attrs = []
@@ -354,6 +362,7 @@ platformdirs = [
     {file = "platformdirs-2.5.2.tar.gz", hash = "sha256:58c8abb07dcb441e6ee4b11d8df0ac856038f944ab98b7be6b27b2a3c7feef19"},
 ]
 pluggy = []
+pmw = []
 py = []
 pycodestyle = []
 pyflakes = []

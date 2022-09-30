@@ -37,8 +37,8 @@ def demo(**kwargs):
         g = nx.sedgewick_maze_graph()
     elif kwargs.pop("tetr", 0):
         g = nx.tetrahedral_graph()
-    elif kwargs.pop("lobs", 0):
-        g = nx.erdos_renyi_graph(100, 0.15)
+    elif kwargs.pop("erdo", 0):
+        g = nx.erdos_renyi_graph(45, 0.05)
     else:
         g = nx.frucht_graph()
 

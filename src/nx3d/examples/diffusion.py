@@ -16,13 +16,13 @@ def _init_diff_graph(g):
         elm = g.nodes[nd]
         color = [random.random() * 0.8, random.random() * 0.8, random.random() * 0.8, 1]
         elm["color"] = tuple(color)
-        elm["label"] = f"{(sum(color) - 1):.4f}"
+        elm["label"] = f"{(sum(color) - 1):.4f}" if g.graph["show_labels"] else ""
     for ed in g.edges:
         col0 = np.array(g.nodes[ed[0]]["color"])
         col1 = np.array(g.nodes[ed[1]]["color"])
         color = (col0 + col1) / 2
         g.edges[ed]["color"] = tuple(color)
-        g.edges[ed]["label"] = f"{(sum(color)):.3f}"
+        g.edges[ed]["label"] = f"{(sum(color)):.3f}" if g.graph["show_labels"] else ""
     print(f"{len(g)} nodes")
     print(f"EPS={EPS}")
     print(f"Restart when total_delta < {EPS * len(g)}")
@@ -40,18 +40,22 @@ def _diffuse(g: nx.Graph, di: int, dt: float):
         new_col0 = col0 - dc * RATE
         new_col1 = col1 + dc * RATE
         g.nodes[ed[0]]["color"] = tuple(new_col0)
-        g.nodes[ed[0]]["label"] = f"{(sum(new_col0)):.3f}"
+        g.nodes[ed[0]]["label"] = (
+            f"{(sum(new_col0)):.3f}" if g.graph["show_labels"] else ""
+        )
         g.nodes[ed[1]]["color"] = tuple(new_col1)
-        g.nodes[ed[1]]["label"] = f"{(sum(new_col1)):.3f}"
+        g.nodes[ed[1]]["label"] = (
+            f"{(sum(new_col1)):.3f}" if g.graph["show_labels"] else ""
+        )
         g.edges[ed]["color"] = tuple((new_col0 + new_col1) / 2)
-        g.edges[ed]["label"] = f"{(sum(dc)):.3f}"
+        g.edges[ed]["label"] = f"{(sum(dc)):.3f}" if g.graph["show_labels"] else ""
     print(f"total_delta: {total_delta}")
     if total_delta < EPS * len(g):
         print("\nRESTART\n")
         _init_diff_graph(g)
 
 
-def diffusion(g=None, **kwargs):
+def diffusion(g=None, nolabel=False, **kwargs):
     """This function opens a popup showing how a graph diffusion can be rendered. You can run it from your shell as
     follows:
 
@@ -64,6 +68,7 @@ def diffusion(g=None, **kwargs):
     """
     if not g:
         g = nx.frucht_graph()
+    g.graph["show_labels"] = not nolabel
     _init_diff_graph(g)
     app = Nx3D(g, state_trans_func=_diffuse, **kwargs)
     app.run()

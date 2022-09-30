@@ -1,6 +1,7 @@
 """ This source provides functionality for plotting nodes and edges of nx.Graph objects in 3D.
 """
 
+import os
 from dataclasses import dataclass
 from math import cos, isclose, pi, sin, sqrt, tan
 from pathlib import Path
@@ -8,10 +9,16 @@ from typing import Any, Callable, Optional, Union
 
 import networkx as nx
 import numpy as np
+from numpy import linalg
+
+if os.getenv("DEBUG"):
+    from panda3d.core import loadPrcFileData
+
+    loadPrcFileData("", "want-directtools #t")
+    loadPrcFileData("", "want-tk #t")
 from direct.gui.OnscreenText import OnscreenText
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
-from numpy import linalg
 from panda3d.core import (
     AmbientLight,
     DirectionalLight,
@@ -58,9 +65,13 @@ class Defaults:
     speed_theta: float = 96.0
     speed_phi: float = 96.0
     speed_radius: float = 36.0
-    light_direct = [{"hpr": (0, -20, 0)}, {"hpr": (180, -20, 0)}]
-    light_ambient = [{"intensity": 0.1}]
-    light_point = [{"pos": (0, 0, 0)}]
+    # NOTE if you don't have an ambient and a direct light, you will get default lighting:
+    #   https://discourse.panda3d.org/t/cant-find-docs-about-pandas-default-lighting/11328/5
+    lights = [
+        ("directional", {"hpr": (180, -20, 0), "color": (1, 0, 0, 1)}),
+        # ('directional', {"hpr": (0, 0, -90), "color": (.1, .1, .1, .1)}),
+        ("ambient", {"color": (0.1, 0.1, 0.1, 1)}),
+    ]
     state_trans_freq: float = 1.0
 
 
@@ -212,27 +223,55 @@ class Nx3D(ShowBase):
                 "label_color", edge_label_color
             )
 
-        self.initial_pos = {nd: graph.nodes[nd]["pos"] for nd in graph.nodes}
+        self.initial_pos = {n: nd["pos"] for n, nd in graph.nodes(data=True)}
 
         # init lights
-        for i, dl in enumerate(Defaults.light_direct):
-            hpr = dl["hpr"]
-            dlight = DirectionalLight(f"directional_light_{i}")
-            dlnp = self.render.attachNewNode(dlight)
-            self.render.setLight(dlnp)
-            dlnp.setHpr(*hpr)
-        for i, al in enumerate(Defaults.light_ambient):
-            intensity = al["intensity"]
-            alight = AmbientLight(f"ambient_light_{i}")
-            alnp = self.render.attachNewNode(alight)
-            self.render.setLight(alnp)
-            alnp.setColor(intensity)
-        for i, pl in enumerate(Defaults.light_point):
-            pos = pl["pos"]
-            plight = PointLight(f"point_light_{i}")
-            plnp = self.render.attachNewNode(plight)
-            self.render.setLight(plnp)
-            plnp.setPos(*pos)
+        # self.render.setLightOff()
+        import sys
+
+        self.render.ls()
+        dl = DirectionalLight("dl")
+        dl.setColor(0.1)
+        dln = self.render.attachNewNode(dl)
+        dln.setHpr(180, -20, 0)
+        self.render.setLight(dln)
+
+        al = AmbientLight("al")
+        al.setColor(0.1)
+        aln = self.render.attachNewNode(al)
+        self.render.setLight(aln)
+        print("--------------")
+        self.render.ls()
+        # self.render.setShaderAuto()
+        # sys.exit()
+        # for i, (kind, config) in enumerate(Defaults.lights):
+        #     print('-----------------------------')
+        #     light_name = f"{kind}_light_{i}"
+        #     print(light_name)
+        #     print(config)
+        #     if kind == 'directional':
+        #         MyLight = DirectionalLight
+        #     elif kind == 'ambient':
+        #         MyLight = AmbientLight
+        #     elif kind == 'point':
+        #         MyLight = PointLight
+        #     else:
+        #         raise ValueError(f'light kind={kind} not supported')
+        #     light = MyLight(light_name)
+        #     color = config.get('color')
+        #     if color:
+        #         light.setColor(color)
+        #     print(light)
+        #     light_node = self.render.attachNewNode(light)
+        #     hpr = config.get('hpr')
+        #     if hpr:
+        #         light_node.setHpr(*hpr)
+        #     pos = config.get('pos')
+        #     if pos:
+        #         light_node.setPos(pos)
+        #     self.render.setLight(light_node)
+
+        # import sys; sys.exit()
 
         # init 3d models
         for i, nd in enumerate(graph.nodes):
@@ -310,18 +349,20 @@ class Nx3D(ShowBase):
         """register event handler for keyboard presses, update self._latest_key with keyboard input when called
         https://docs.panda3d.org/1.10/python/programming/hardware-support/keyboard-support#keystroke-events
         """
-        if self.camera:
+        if self.camera and not os.getenv("DEBUG"):
             self.buttonThrowers[0].node().setKeystrokeEvent("keystroke")
             self.accept("keystroke", self.latestKeyboardEvent)
         else:
-            print(
-                "not initializing keystroke listener because there is no camera through which to render"
-            )
+            print("not initializing keystroke listener")
 
     def _init_camera(self):
         self.disableMouse()
         bd = self.render.getBounds()
-        rad = np.linalg.norm(bd.getApproxCenter()) + bd.getRadius()
+        try:
+            rad = np.linalg.norm(bd.getApproxCenter()) + bd.getRadius()
+        except AssertionError:
+            assert os.getenv("DEBUG") is not None
+            rad = 5.0
         fov = min(self.camLens.fov) if self.camLens else 45
         radians_fov = fov / 180 * pi
         self.initial_camera_radius = rad / tan(radians_fov) * 1.75
