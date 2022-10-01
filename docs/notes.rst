@@ -23,9 +23,10 @@ Lighting
 -----------------------------
 - models MAY come with their own lights! To handle this, there is a _model.setLightOff() in _init_panda3d_model.
 - default lighting is an ambient light with color (1, 1, 1, 1)
-  - sources:
-    - https://discourse.panda3d.org/t/cant-find-docs-about-pandas-default-lighting/11328/5
-    - https://discourse.panda3d.org/t/how-to-disable-the-ambient-light-in-a-panda3d-environment/15755
+
+Sources:
+- https://discourse.panda3d.org/t/cant-find-docs-about-pandas-default-lighting/11328/5
+- https://discourse.panda3d.org/t/how-to-disable-the-ambient-light-in-a-panda3d-environment/15755
 
 Window properties
 -----------------------------
@@ -35,7 +36,7 @@ Debugging
 -----------------------------
 
 Examine the 3d models while the app is running
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 from panda3d.core import loadPrcFileData
 loadPrcFileData("", "want-directtools #t")
 loadPrcFileData("", "want-tk #t")

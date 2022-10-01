@@ -5,23 +5,22 @@ There are two main ways in which ``nx3d`` is intended to be used. First, as a qu
 your graph. Second, as a more involved tool for visualizing temporal processes over graphs. On this page, you will find
 how-to-guides for both use-cases.
 
-But before that, an explanation of the "special attributes" ``nx3d`` uses to keep track of the desired 3D render state.
+But before that, an explanation of the "render attributes" ``nx3d`` uses to keep track of the desired 3D render state.
 
 Render attributes
 --------------------------------------------
 
 Please note that ``nx3d`` will modify your graph in place. By default, it will assign a set of static render
-attributes to your graph's nodes and edges. ``nx3d`` uses these attributes to control the state of the 3D
-render. These attributes include 'color', 'label', and so on - see the :doc:`api` page for a complete list.
+attributes to your graph's nodes and edges. ``nx3d`` reads these attributes in each frame update to control the state of
+the 3D render. These attributes include 'color', 'label', and so on.
 
-You can provide default values for render attributes to ``nx3d.Nx3D.__init__`` in the case you don't want to initialize
-them per-element yourself. For example ``app=Nx3D(my_graph, edge_color=(0, 1, 0, 1)``.
-These static defaults will be applied to your graph upon ``Nx3D`` initialization as ``g.edges[e]['color'] ==
-edge_color for e in g.edges``.
+You can provide uniform static render attributes to ``nx3d.Nx3D.__init__`` in the case you don't want to initialize
+them per-element yourself. For example ``app=Nx3D(my_graph, edge_color=(0, 1, 0, 1)`` will apply
+``my_graph.edges[e]['color'] == edge_color for e in my_graph.edges``.
 
 In case you have no preference, sensible defaults are provided so you can get started with just ``nx3d.plot(g)``.
 
-Plot my graph
+Plot a graph
 -------------------------
 
 To plot your graph, write something like the following:
@@ -31,21 +30,22 @@ To plot your graph, write something like the following:
    import networkx as nx
    import nx3d
 
-   def make_my_graph(...) -> nx.Graph:
-      # for example, `return nx.frucht_graph()`
-      ...
+   g = nx.frucht_graph()
+   nx3d.plot(g, autolabel=True, edge_color=(0, 1, 0.1, 1))
 
-   g = make_my_graph()
-   nx3d.plot(g, autolabel=True, edge_color=(0, 1, 0.5, 1))
-
-Animate my graph process
+Animate a graph process
 -------------------------
 
 You can update render attributes dynamically by providing a ``state_trans_func: Callable[[nx.Graph, int, float],
 None]``. This function, if provided, will update the graph in place every ``state_trans_freq: float=1.`` seconds. The
 updated render attributes are automatically propagated to the 3D render with the built-in ``Nx3D.stateUpdateTask`` every
-time the main loop ticks. With that in mind, you should make sure the ``state_trans_func`` doesn't take too long because
-it does block the frame update rate.
+time the main loop ticks.
+
+Note that the state transformation frequency is independent of the 3D render's frame-rate - unless the state function
+blocks for a noticable length of time.  With that in mind, you should make sure the ``state_trans_func`` doesn't take
+too long to return.
+
+The following minimal example shows how to control the ``'label'`` render attribute based on some simple graph process.
 
 .. code-block:: python
 
@@ -70,13 +70,15 @@ it does block the frame update rate.
       state_trans_func=my_graph_markov_process,
    )
 
-The main loop
--------------------------
+Interact with a graph process
+--------------------------------------------------
 
-In short, you don't need to use the ``app.run()`` mainloop that's built in to panda3d.ShowBase. For example, a trivial
-main loop is:
+To interact with the graph process, you'll need to control your own main loop and react to the events that Nx3D
+enqueues. As of ``nx3d 22.10.2``, you are limited to keyboard events, and the keys ``wasdio`` are reserved for camera
+movement.
 
 .. code-block:: python
+
    import networkx as nx
    import nx3d
 

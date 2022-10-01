@@ -50,6 +50,7 @@ The pre-commit hooks defined in ``.pre-commit-config.yaml`` apply linting and fo
 use the pre-commit hooks before opening a PR.
 
 First time setup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 From this project's root, initialize pre-commit as follows:
 
@@ -68,7 +69,8 @@ From this project's root, initialize pre-commit as follows:
 
 First time updating the docs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-I used ``brew install python-sphinx``, see installation instructions on [www.sphinx-doc.org](https://www.sphinx-doc.org/en/master/usage/installation.html).
+I used ``brew install python-sphinx``, see installation instructions on
+`www.sphinx-doc.org <https://www.sphinx-doc.org/en/master/usage/installation.html>`_.
 
 7. Open a PR
 --------------------------------------

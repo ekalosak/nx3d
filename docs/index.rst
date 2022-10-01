@@ -6,7 +6,7 @@
 Welcome to nx3d's documentation!
 ================================
 
-``nx3d`` provides 3D plotting functionality for the ``networkx`` Python package.
+``nx3d`` provides interactive, extensible 3D plotting functionality for the ``networkx`` Python package.
 
 The `project homepage <https://github.com/ekalosak/nx3d>`_ has quickstart instructions.
 
@@ -42,33 +42,30 @@ Using Mayavi2
 
 So why another one?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Because there's the potential for richer visualization - one where your graph data can be visualized in interactive
-layers. Because getting started should be a one-liner: . Because data should
-be fun.
-
+Because none of the alternatives are built on a 3D game engine. This design choice provides ``nx3d`` with an
+embarassment of flexibility.
 
 Hello world, start here
 ------------------------------------
 Install with ``pip install nx3d``.
 Check your installation with ``python -m nx3d autolabel``.
-Use in your code like ``nx3d.plot(nx.random_lobster(100,.9,.9))``.
-See the :doc:`examples` page and the :doc:`usage` next.
+Use in your code like ``nx3d.plot(nx.tetrahedral_graph())``.
+See the :doc:`usage` and :doc:`examples` pages next.
 
 
-Limitations
+Known limitations
 ------------------------------------
-The major known limitations are listed below.
 
 large graphs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Currently, this project will start to clip (non-smooth 3d visuals) when the graph has >250 nodes on my 5yr old macbook.
+Graphs with more than 500 nodes may degrade the frame-rate on older computers.
+Try ``nx3d.plot(nx.random_lobster(100,.9,.9))`` to get a sense of how performance scales on your system.
 
 render attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-``nx3d`` doesn't have all the same controls that Matplotlib does. While you can set size, label, color, and position -
-some attributes like marker kind aren't yet available. See `this
-milestone<https://github.com/ekalosak/nx3d/milestone/3`_ for progress on these features.
+``nx3d`` doesn't have all the same controls that Matplotlib does (yet). While you can set size, label, color, and
+position - some attributes like marker kind aren't yet available. See
+`this milestone <https://github.com/ekalosak/nx3d/milestone/3/>`_ for progress on these features.
 
 threading
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
