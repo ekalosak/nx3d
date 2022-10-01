@@ -10,8 +10,8 @@ Welcome to nx3d's documentation!
 
 The `project homepage <https://github.com/ekalosak/nx3d>`_ has quickstart instructions.
 
-.. image:: https://raw.githubusercontent.com/ekalosak/nx3d/cf473d1dfab506ecd4044f4693c09aea0e1153ba/data/frucht.gif
-   :width: 400
+.. image:: data/frucht_thin.gif
+   :width: 100%
 
 Alternatives
 ------------------------------------

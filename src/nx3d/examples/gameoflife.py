@@ -1,5 +1,8 @@
 """ This source implements the Game of Life on:
 - a 2D gridded finite Graph
+
+# TODO
+- Use nx.grid_2d_graph
 - a 3D gridded finite Graph
 - a 2D gridded finite Graph embedded in 3D on a sphere
 - a 2D gridded finite DiGraph embedded on a cylinder, taurus, mobius strip (need 2 layers z to orient), klein bottle
@@ -42,7 +45,6 @@ def _make_grid_2d(size: tuple[int, int]):
     """start from upper left origin, increase in y is down, increase in x is right"""
     g = nx.Graph()
     # g = nx.grid_2d_graph(*size)
-    print(len(g))
     # g = nx.Graph()
     for y in range(size[0]):
         for x in range(size[1]):
@@ -124,7 +126,7 @@ def _do_life(g: nx.Graph, di: int, dt: float):
     _update_colors(g)
 
 
-def game_of_life(g=None, **kwargs):
+def game_of_life(g=None, size=(32, 32), **kwargs):
     """This function opens a popup that runs the Game of Life.
 
     ``
@@ -135,7 +137,7 @@ def game_of_life(g=None, **kwargs):
         kwargs: passed to Nx3D.__init__
     """
     if not g:
-        g = _make_board("2Dgrid", (16, 24))
+        g = _make_board("2Dgrid", size)
     for nd in g.nodes:
         assert len(g.nodes[nd]["pos"]) == 3
     app = Nx3D(g, state_trans_func=_do_life, **kwargs)

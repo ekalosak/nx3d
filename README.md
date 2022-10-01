@@ -45,12 +45,12 @@ python -m nx3d mul dir
 
 ### Diffusion demo
 ```sh
-python -m nx3d diffusion
+python -m nx3d diffusion watt nolabel
 ```
 
 ### Game of Life demo
 ```sh
-python -m nx3d life
+python -m nx3d life nofilter
 ```
 
 # Usage

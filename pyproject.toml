@@ -34,7 +34,6 @@ isort = "^5.10.1"
 flake8 = "^5.0.4"
 mypy = "^0.971"
 panda3d-blend2bam = "^0.20"
-# Pmw = "^2.1.1"
 
 [tool.mypy]
 exclude = ['docs/']

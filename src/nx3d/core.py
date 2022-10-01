@@ -39,7 +39,7 @@ if os.environ.get("TRACE"):
     DO_LS = True
 elif os.environ.get("DEBUG"):
     logger.add(sys.stderr, level="DEBUG")
-else:
+elif os.environ.get("INFO"):
     logger.add(sys.stderr, level="INFO")
 
 
@@ -638,9 +638,15 @@ class Nx3D(ShowBase):
         self.camera.setH(self.cam_theta)
         return Task.cont
 
-    def flush_latest_keystroke(self) -> str:
+    def flush_latest_keystroke(self) -> Optional[str]:
         """
-        see https://docs.panda3d.org/1.10/python/programming/hardware-support/keyboard-support#keystroke-events"""
+        Returns:
+            This function returns the latest keystroke (e.g. 'r') pressed by the user. If you call it before the user
+            presses another key (or before they press any) you will get None.
+
+        See https://docs.panda3d.org/1.10/python/programming/hardware-support/keyboard-support#keystroke-events for more
+        information on the keystroke monitoring event system.
+        """
         k = self._latest_key
         self._latest_key = None
         return k
