@@ -70,12 +70,11 @@ it does block the frame update rate.
       state_trans_func=my_graph_markov_process,
    )
 
-Give me the main loop
+The main loop
 -------------------------
 
-If you want this control, you should be ready to dig into the Panda3D docs - there is more detailed information about
-how Nx3D's base class ShowBase is executed. In short, you don't need to use the ``app.run()`` mainloop that's built in
-to ShowBase. For example, a trivial main loop is:
+In short, you don't need to use the ``app.run()`` mainloop that's built in to panda3d.ShowBase. For example, a trivial
+main loop is:
 
 .. code-block:: python
    import networkx as nx
@@ -83,7 +82,7 @@ to ShowBase. For example, a trivial main loop is:
 
    FPS = 32
 
-   g = nx.erdos_renyi_graph(100,0.15)
+   g = nx.erdos_renyi_graph(45,0.05)
    app = Nx3D(g)
 
    while 1:

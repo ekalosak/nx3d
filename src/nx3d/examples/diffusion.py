@@ -3,6 +3,7 @@ import random
 
 import networkx as nx
 import numpy as np
+from loguru import logger
 
 from nx3d.core import Nx3D
 
@@ -23,9 +24,9 @@ def _init_diff_graph(g):
         color = (col0 + col1) / 2
         g.edges[ed]["color"] = tuple(color)
         g.edges[ed]["label"] = f"{(sum(color)):.3f}" if g.graph["show_labels"] else ""
-    print(f"{len(g)} nodes")
-    print(f"EPS={EPS}")
-    print(f"Restart when total_delta < {EPS * len(g)}")
+    logger.info(f"{len(g)} nodes")
+    logger.info(f"EPS={EPS}")
+    logger.info(f"Restart when total_delta < {EPS * len(g)}")
 
 
 def _diffuse(g: nx.Graph, di: int, dt: float):
@@ -49,9 +50,9 @@ def _diffuse(g: nx.Graph, di: int, dt: float):
         )
         g.edges[ed]["color"] = tuple((new_col0 + new_col1) / 2)
         g.edges[ed]["label"] = f"{(sum(dc)):.3f}" if g.graph["show_labels"] else ""
-    print(f"total_delta: {total_delta}")
+    logger.debug(f"total_delta: {total_delta}")
     if total_delta < EPS * len(g):
-        print("\nRESTART\n")
+        logger.success("Restarting...")
         _init_diff_graph(g)
 
 
