@@ -1,6 +1,5 @@
 Contributing
 ================================
-
 Thank you for considering contributing to ``nx3d``.
 
 This project is free and open source, so the best way to contribute is by writing code.
@@ -74,5 +73,6 @@ I used ``brew install python-sphinx``, see installation instructions on
 
 7. Open a PR
 --------------------------------------
+Increment the version in the pyproject.toml and docs/conf.py files.
 When a PR is created or updated, code checks will be run and documentation preview will be generated.
 When a PR is merged, the code will be pushed to PyPi and the docs to ReadTheDocs.
