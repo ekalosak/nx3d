@@ -38,7 +38,7 @@ def demo(**kwargs):
     elif kwargs.pop("tetr", 0):
         g = nx.tetrahedral_graph()
     elif kwargs.pop("comp", 0):
-        g = nx.complete_graph(5)
+        g = nx.complete_graph(13)
     elif kwargs.pop("compbi", 0):
         g = nx.complete_bipartite_graph(3, 5)
     elif kwargs.pop("barb", 0):
@@ -50,9 +50,9 @@ def demo(**kwargs):
     elif kwargs.pop("watt", 0):
         g = nx.watts_strogatz_graph(30, 3, 0.1)
     elif kwargs.pop("bara", 0):
-        g = nx.barabasi_albert_graph(100, 5)
+        g = nx.barabasi_albert_graph(30, 3)
     elif kwargs.pop("lobs", 0):
-        g = nx.random_lobster(8, 0.9, 0.9)
+        g = nx.random_lobster(8, 0.6, 0.2)
     else:
         g = nx.frucht_graph()
 
@@ -79,7 +79,7 @@ def demo(**kwargs):
     g.graph["show_labels"] = not kwargs.pop("nolabel", 1)
 
     if kwargs.pop("diffusion", False):
-        diffusion(g, **kwargs)
+        diffusion(g, windowtitle="Nx3D - diffusion demo", **kwargs)
     elif kwargs.pop("life", False):
         game_of_life(**kwargs)
     else:

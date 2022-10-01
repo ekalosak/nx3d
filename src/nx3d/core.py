@@ -25,19 +25,22 @@ from panda3d.core import (
     TextNode,
     Vec3,
     Vec4,
+    WindowProperties,
     loadPrcFileData,
 )
 
 from nx3d import utils
 from nx3d.types import Pos3
 
-if not os.environ.get("DEBUG"):
-    DO_LS = True
-    logger.remove()
-else:
-    DO_LS = False
+DO_LS = False
+logger.remove()
 if os.environ.get("TRACE"):
     logger.add(sys.stderr, level="TRACE")
+    DO_LS = True
+elif os.environ.get("DEBUG"):
+    logger.add(sys.stderr, level="DEBUG")
+else:
+    logger.add(sys.stderr, level="INFO")
 
 
 loadPrcFileData("", "background-color .03")
@@ -95,19 +98,20 @@ class Nx3D(ShowBase):
         ```
 
     Configuration is applied in the following order:
-        1. Special graph attributes e.g. g.nodes[...]['color']
+        1. Render attributes on the nodes and edges e.g. g.nodes[...]['color']
         2. Arguments to this function
 
-    The special graph attributes are:
+    The render attributes are:
         - 'color': panda3d.Vec4 with values in [0, 1]
         - 'pos': panda3d.Vec3 in x y z order
         - 'label': str
         - 'label_color': Vec4
         - 'pos': Vec3, note that dynamic positions aren't supported yet, see https://github.com/ekalosak/nx3d/issues/19
-        for nodes:
+
+        for nodes there is an extra one:
             - 'shape': Vec3, same note as pos
 
-    Note that these special attributes will be overwritten in place, especially when provided a state_trans_func.
+    Note that these render attributes will typically be overwritten in place.
 
     For more info, see :doc:`usage`.
 
@@ -119,17 +123,22 @@ class Nx3D(ShowBase):
         node_labels: Map from the graph's nodes to string labels.
         edge_color: Default RGBA color for the edges. Currently homogeneous colors only suppported.
         edge_labels: Map from the graph's edges to string labels.
+        lights: Configure the lighting in your scene, see Default for example
+        state_trans_delay: How often, in seconds, to apply the <state_trans_func>.
+        state_trans_func: A state transfer function for <g>'s state.
+            Set attributes on graph components to update the render. If not None, the graph's nodes and edges must be
+            annotated with 'color' and 'label' entries in the annotation dictionary i.e. g.nodes[nd]['color'] must exist for
+            all nodes.
+        nofilter: Don't use any filters - can help your framerate for large graphs.
+        nogui: Don't show help or diagnostic information on screen - for a cleaner look.
         plot_axes: Show the XYZ axes in the 3D scene
         autolabel: Use the string representation of both the nx.Graph's nodes and edges as labels.
             Autolabel supercedes autolabel_nodes and autolabel_edges when True.
         autolabel_nodes: Use the string representation of the nx.Graph's nodes as labels.
         autolabel_edges: Use the string representation of the nx.Graph's edges as labels.
         mouse: Use mouse control rather than keyboard control.
-        state_trans_delay: How often, in seconds, to apply the <state_trans_func>.
-        state_trans_func: A state transfer function for <g>'s state.
-            Set attributes on graph components to update the render. If not None, the graph's nodes and edges must be
-            annotated with 'color' and 'label' entries in the annotation dictionary i.e. g.nodes[nd]['color'] must exist for
-            all nodes.
+        windowsize: Tuple of height, width of the popup window.
+        windowtitle: Title of the popup window.
         kwargs: Passed to the base class ShowBase.
 
     Returns:
@@ -148,6 +157,7 @@ class Nx3D(ShowBase):
         edge_color: Vec4 = Defaults.edge_color,
         edge_labels: dict = {},
         edge_label_color: Vec4 = Defaults.edge_label_color,
+        lights: list[tuple[str, str, dict]] = Defaults.lights,
         state_trans_delay: float = Defaults.state_trans_delay,
         state_trans_func: Optional[Callable[[nx.Graph, int, float], Any]] = None,
         nofilter=False,
@@ -157,6 +167,8 @@ class Nx3D(ShowBase):
         autolabel_nodes=False,
         autolabel_edges=False,
         mouse=False,
+        windowsize=(650, 450),
+        windowtitle="Nx3D",
         **kwargs,
     ):
         ShowBase.__init__(self, **kwargs)
@@ -164,6 +176,14 @@ class Nx3D(ShowBase):
         self.g = graph
         self.time_elapsed = 0.0
         self._latest_key = None
+
+        if self.win:
+            properties = WindowProperties()
+            properties.setTitle(windowtitle)
+            properties.setSize(*windowsize)
+            properties.setOrigin(0, 0)
+            self.win.requestProperties(properties)
+
         self._init_filepaths()
         if autolabel:
             autolabel_nodes = autolabel_edges = True
@@ -178,7 +198,7 @@ class Nx3D(ShowBase):
             autolabel_edges,
             autolabel_nodes,
         )
-        self._init_lights()
+        self._init_lights(lights)
         self._init_models()
         self._init_camera()
         if not nofilter:
@@ -242,15 +262,15 @@ class Nx3D(ShowBase):
         ), "_init_positions failed to assign positions to all nx nodes"
         self.initial_pos = pos
 
-    def _init_lights(self):
-        # see Defaults.lights for configuration
+    def _init_lights(self, lights):
+        # see Defaults.lights for configuration examples
         al = AmbientLight("al")
         al.setColor(Defaults.background_ambient_light_intensity)
         aln = self.render.attachNewNode(al)
         self.render.setLight(aln)
         self.node_lights = []
         self.edge_lights = []
-        for i, (kind, target, config) in enumerate(Defaults.lights):
+        for i, (kind, target, config) in enumerate(lights):
             light_name = f"{kind}_light_{i}"
             if kind == "directional":
                 light = DirectionalLight(light_name)
@@ -357,7 +377,7 @@ class Nx3D(ShowBase):
         self._init_nodes()
         self._init_edges()
 
-    def _init_filters(self, bloom=False, cartoon=False):
+    def _init_filters(self, bloom=True, cartoon=False):
         if not self.cam:
             return
         logger.info("")
@@ -372,7 +392,7 @@ class Nx3D(ShowBase):
     ):
         logger.info("")
         if autolabel_nodes or autolabel_edges and any([edge_labels, node_labels]):
-            print("overwriting labels, set autolabel False if undesired")
+            logger.info("overwriting labels, set autolabel False if undesired")
         if autolabel_nodes:
             node_labels = {nd: str(nd) for nd in self.g.nodes}
         if autolabel_edges:
@@ -397,11 +417,11 @@ class Nx3D(ShowBase):
         """register event handler for keyboard presses, update self._latest_key with keyboard input when called
         https://docs.panda3d.org/1.10/python/programming/hardware-support/keyboard-support#keystroke-events
         """
-        if self.camera and not os.getenv("DEBUG"):
+        if self.camera:
             self.buttonThrowers[0].node().setKeystrokeEvent("keystroke")
             self.accept("keystroke", self.latestKeyboardEvent)
         else:
-            print("not initializing keystroke listener")
+            logger.debug("not initializing keystroke listener")
 
     def _init_camera(self):
         self.disableMouse()

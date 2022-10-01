@@ -10,11 +10,11 @@ from nx3d.core import Nx3D
 
 DIFFUSION_RATE = 0.05  # scale diffusion rate per update call
 DIFFUSION_STEP_PER_SEC = 4
-EPS = 0.18  # per node "not diffusing" game over parameter
+EPS = 0.3  # per node "not diffusing" game over parameter
 
 
 def _init_diff_graph(g):
-    """must init color val label"""
+    """init color and label render attributes"""
     for nd in g.nodes:
         elm = g.nodes[nd]
         color = [random.random() * 0.8, random.random() * 0.8, random.random() * 0.8, 1]
