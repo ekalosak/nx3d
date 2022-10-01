@@ -5,4 +5,16 @@ These examples show ways to render temporal graph processes in 3D. View the sour
 The simplest place to start is ``diffusion``.
 
 .. autofunction:: nx3d.examples.diffusion
+
+.. image:: data/watt_diffusion.gif
+   :width: 100%
+
+.. image:: data/erdo_diffusion.gif
+   :width: 100%
+
 .. autofunction:: nx3d.examples.game_of_life
+
+.. image:: data/gol.gif
+   :width: 100%
+
+.. autofunction:: nx3d.examples.keyboard_control

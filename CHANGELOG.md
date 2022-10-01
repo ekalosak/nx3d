@@ -1,5 +1,18 @@
+# Fri Oct 1 2022
+22.10.2 - Interactivity
+- added loguru as a dependency; env vars DEBUG, INFO, and TRACE configure via core.py
+- learned about existing alternatives for 3d nx.graph plotting; added to docs/index.rst
+- added nofilter and nogui options to Nx3D init
+- added window property config options to Nx3D init
+- added keyboard input passthrough; see docs/usage.rst
+- added example for keyboard input passthrough
+- moved gifs to docs/data/
+- moved limitations docs page to index
+- expanded and unlinked docs/notes.rst
+- revised docs/usage.rst; added section on interactivity
+
 # Fri Sep 24 2022
-22.10.1
+22.10.1 - Complete nx support
 - implemented multi di graph
 
 22.10.0

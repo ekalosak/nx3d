@@ -1,6 +1,8 @@
 """ This source provides functionality for plotting nodes and edges of nx.Graph objects in 3D.
 """
 
+import os
+import sys
 from dataclasses import dataclass
 from math import cos, isclose, pi, sin, sqrt, tan
 from pathlib import Path
@@ -8,9 +10,11 @@ from typing import Any, Callable, Optional, Union
 
 import networkx as nx
 import numpy as np
+from direct.filter.CommonFilters import CommonFilters
 from direct.gui.OnscreenText import OnscreenText
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
+from loguru import logger
 from numpy import linalg
 from panda3d.core import (
     AmbientLight,
@@ -21,10 +25,25 @@ from panda3d.core import (
     TextNode,
     Vec3,
     Vec4,
+    WindowProperties,
+    loadPrcFileData,
 )
 
 from nx3d import utils
 from nx3d.types import Pos3
+
+DO_LS = False
+logger.remove()
+if os.environ.get("TRACE"):
+    logger.add(sys.stderr, level="TRACE")
+    DO_LS = True
+elif os.environ.get("DEBUG"):
+    logger.add(sys.stderr, level="DEBUG")
+elif os.environ.get("INFO"):
+    logger.add(sys.stderr, level="INFO")
+
+
+loadPrcFileData("", "background-color .03")
 
 FILES = {
     "node": Path(__file__).parent / "data/icosphere.bam",
@@ -55,13 +74,17 @@ class Defaults:
     node_label_color: Vec4 = (0, 1, 0, 1)
     edge_color: Vec4 = (0.3, 0.3, 0.3, 0.5)
     edge_label_color: Vec4 = (0, 1, 0, 1)
-    speed_theta: float = 96.0
-    speed_phi: float = 96.0
+    speed_theta: float = 82.0
+    speed_phi: float = 82.0
     speed_radius: float = 36.0
-    light_direct = [{"hpr": (0, -20, 0)}, {"hpr": (180, -20, 0)}]
-    light_ambient = [{"intensity": 0.3}]
-    light_point = [{"pos": (0, 0, 0)}]
-    state_trans_freq: float = 1.0
+    lights = [
+        ("directional", "nodes", {"hpr": (180, -20, 180), "color": 0.3}),
+        ("directional", "edges", {"hpr": (180, -20, 0), "color": 0.1}),
+        ("ambient", "both", {"color": 0.9}),
+        ("point", "both", {"color": 0.5, "pos": (0, 0, 0)}),
+    ]
+    background_ambient_light_intensity: float = 1.0
+    state_trans_delay: float = 1.0
 
 
 class Nx3D(ShowBase):
@@ -75,19 +98,20 @@ class Nx3D(ShowBase):
         ```
 
     Configuration is applied in the following order:
-        1. Special graph attributes e.g. g.nodes[...]['color']
+        1. Render attributes on the nodes and edges e.g. g.nodes[...]['color']
         2. Arguments to this function
 
-    The special graph attributes are:
+    The render attributes are:
         - 'color': panda3d.Vec4 with values in [0, 1]
         - 'pos': panda3d.Vec3 in x y z order
         - 'label': str
         - 'label_color': Vec4
         - 'pos': Vec3, note that dynamic positions aren't supported yet, see https://github.com/ekalosak/nx3d/issues/19
-        for nodes:
+
+        for nodes there is an extra one:
             - 'shape': Vec3, same note as pos
 
-    Note that these special attributes will be overwritten in place, especially when provided a state_trans_func.
+    Note that these render attributes will typically be overwritten in place.
 
     For more info, see :doc:`usage`.
 
@@ -99,15 +123,22 @@ class Nx3D(ShowBase):
         node_labels: Map from the graph's nodes to string labels.
         edge_color: Default RGBA color for the edges. Currently homogeneous colors only suppported.
         edge_labels: Map from the graph's edges to string labels.
-        plot_axes: Show the XYZ axes in the 3D scene
-        verbose: Print diagnostic information to stdout.
-        autolabel: Use the string representation of the nx.Graphs' nodes and edges as labels.
-        mouse: Use mouse control rather than keyboard control.
-        state_trans_freq: How often, in seconds, to apply the <state_trans_func>.
+        lights: Configure the lighting in your scene, see Default for example
+        state_trans_delay: How often, in seconds, to apply the <state_trans_func>.
         state_trans_func: A state transfer function for <g>'s state.
             Set attributes on graph components to update the render. If not None, the graph's nodes and edges must be
             annotated with 'color' and 'label' entries in the annotation dictionary i.e. g.nodes[nd]['color'] must exist for
             all nodes.
+        nofilter: Don't use any filters - can help your framerate for large graphs.
+        nogui: Don't show help or diagnostic information on screen - for a cleaner look.
+        plot_axes: Show the XYZ axes in the 3D scene
+        autolabel: Use the string representation of both the nx.Graph's nodes and edges as labels.
+            Autolabel supercedes autolabel_nodes and autolabel_edges when True.
+        autolabel_nodes: Use the string representation of the nx.Graph's nodes as labels.
+        autolabel_edges: Use the string representation of the nx.Graph's edges as labels.
+        mouse: Use mouse control rather than keyboard control.
+        windowsize: Tuple of height, width of the popup window.
+        windowtitle: Title of the popup window.
         kwargs: Passed to the base class ShowBase.
 
     Returns:
@@ -117,7 +148,7 @@ class Nx3D(ShowBase):
 
     def __init__(
         self,
-        graph: Union[nx.Graph, nx.DiGraph],
+        graph: Union[nx.Graph, nx.DiGraph] = nx.tutte_graph(),
         pos: Optional[Pos3] = None,
         node_color: Vec4 = Defaults.node_color,
         node_size: float = Defaults.node_size,
@@ -126,129 +157,194 @@ class Nx3D(ShowBase):
         edge_color: Vec4 = Defaults.edge_color,
         edge_labels: dict = {},
         edge_label_color: Vec4 = Defaults.edge_label_color,
-        plot_axes=False,
-        verbose=False,
-        autolabel=False,
-        mouse=False,
-        state_trans_freq: float = Defaults.state_trans_freq,
+        lights: list[tuple[str, str, dict]] = Defaults.lights,
+        state_trans_delay: float = Defaults.state_trans_delay,
         state_trans_func: Optional[Callable[[nx.Graph, int, float], Any]] = None,
+        nofilter=False,
+        nogui=False,
+        plot_axes=False,
+        autolabel=False,
+        autolabel_nodes=False,
+        autolabel_edges=False,
+        mouse=False,
+        windowsize=(650, 450),
+        windowtitle="Nx3D",
         **kwargs,
     ):
         ShowBase.__init__(self, **kwargs)
+        logger.info("")
         self.g = graph
-        self.verbose = verbose
         self.time_elapsed = 0.0
+        self._latest_key = None
 
-        # init file paths
-        node_fp = FILES.get("node")
-        if isinstance(graph, nx.MultiDiGraph):
-            edge_fp = FILES.get("edge_directed_bent")
-        elif isinstance(graph, nx.MultiGraph):
-            edge_fp = FILES.get("edge_bent")
-        elif isinstance(graph, nx.DiGraph):
-            edge_fp = FILES.get("edge_directed")
-        else:
-            edge_fp = FILES.get("edge")
-        if edge_fp is None or node_fp is None:
-            raise NotImplementedError
+        if self.win:
+            properties = WindowProperties()
+            properties.setTitle(windowtitle)
+            properties.setSize(*windowsize)
+            properties.setOrigin(0, 0)
+            self.win.requestProperties(properties)
 
-        # init labels
+        self._init_filepaths()
         if autolabel:
-            if verbose and any([edge_labels, node_labels]):
-                print("overwriting labels, set autolabel False if undesired")
-            node_labels = {nd: str(nd) for nd in graph.nodes}
-            edge_labels = {ed: str(ed) for ed in graph.edges}
+            autolabel_nodes = autolabel_edges = True
+        self._init_positions(pos)
+        self._init_render_attrs(
+            node_color,
+            edge_color,
+            node_labels,
+            edge_labels,
+            node_label_color,
+            edge_label_color,
+            autolabel_edges,
+            autolabel_nodes,
+        )
+        self._init_lights(lights)
+        self._init_models()
+        self._init_camera()
+        if not nofilter:
+            self._init_filters()
+        if not nogui:
+            self._init_gui(mouse)
+        self._init_keyboard_input()
+        if plot_axes:
+            self._init_axes(FILES["edge"])
+        if not mouse:
+            self._init_keyboard_camera()
+        self._init_state_update_task(state_trans_delay, state_trans_func)
 
-        # init positions
+    def _init_render_attrs(
+        self,
+        node_color,
+        edge_color,
+        node_labels,
+        edge_labels,
+        node_label_color,
+        edge_label_color,
+        autolabel_edges,
+        autolabel_nodes,
+    ):
+        self.node_labels, self.edge_labels = self._preprocess_labels(
+            node_labels, edge_labels, autolabel_edges, autolabel_nodes
+        )
+        graph = self.g
+        for n, nd in graph.nodes(data=True):
+            nd["color"] = nd.get("color", node_color)
+            nd["shape"] = nd.get("shape", node_color)
+            nd["label"] = nd.get("label", self.node_labels.get(n, ""))
+            nd["label_color"] = nd.get("label_color", node_label_color)
+        for u, v, ed in graph.edges.data():
+            ed["color"] = ed.get("color", edge_color)
+            ed["label"] = ed.get("label", self.edge_labels.get((u, v), ""))
+            ed["label_color"] = ed.get("label_color", edge_label_color)
+
+    def _init_positions(self, pos):
+        graph = self.g
         if pos is None:
-            if all("pos" in graph.nodes[nd] for nd in graph):
-                pos = {nd: graph.nodes[nd]["pos"] for nd in graph}
+            if all("pos" in graph.nodes[n] for n in graph):
+                logger.debug("graph positions pre-initialized")
+                pos = {n: graph.nodes[n]["pos"] for n in graph}
             else:
-                if verbose:
-                    print("creating default pos")
-                    if len(graph) > 256:
-                        print("this may take a while for large graphs")
+                logger.debug(
+                    "graph positions not _all_ pre-initialized creating default pos"
+                )
+                if len(graph) > 256:
+                    logger.warning(
+                        f"initializing positions may take a while for large graphs n>256, len(g)={len(graph)}"
+                    )
                 pos_scale = 2.0 * sqrt(len(graph.nodes))
                 pos = nx.spring_layout(graph, dim=3, scale=pos_scale)
+                for n, nd in graph.nodes(data=True):
+                    nd["pos"] = pos[n]
         if not all(len(p) == 3 for p in pos.values()):
             raise ValueError("pos must be 3d, use the dim=3 kwarg in nx layouts")
+        assert all(
+            "pos" in graph.nodes[n] for n in graph
+        ), "_init_positions failed to assign positions to all nx nodes"
+        self.initial_pos = pos
 
-        # init graph attributes
-        for nd in graph.nodes:
-            graph.nodes[nd]["pos"] = graph.nodes[nd].get("pos", pos[nd])
-            graph.nodes[nd]["color"] = graph.nodes[nd].get("color", node_color)
-            graph.nodes[nd]["shape"] = graph.nodes[nd].get("shape", node_color)
-            graph.nodes[nd]["label"] = graph.nodes[nd].get(
-                "label", node_labels.get(nd, "")
-            )
-            graph.nodes[nd]["label_color"] = graph.nodes[nd].get(
-                "label_color", node_label_color
-            )
-        for ed in graph.edges:
-            graph.edges[ed]["color"] = graph.edges[ed].get("color", edge_color)
-            graph.edges[ed]["label"] = graph.edges[ed].get(
-                "label", edge_labels.get(ed, "")
-            )
-            graph.edges[ed]["label_color"] = graph.edges[ed].get(
-                "label_color", edge_label_color
-            )
+    def _init_lights(self, lights):
+        # see Defaults.lights for configuration examples
+        al = AmbientLight("al")
+        al.setColor(Defaults.background_ambient_light_intensity)
+        aln = self.render.attachNewNode(al)
+        self.render.setLight(aln)
+        self.node_lights = []
+        self.edge_lights = []
+        for i, (kind, target, config) in enumerate(lights):
+            light_name = f"{kind}_light_{i}"
+            if kind == "directional":
+                light = DirectionalLight(light_name)
+            elif kind == "ambient":
+                light = AmbientLight(light_name)
+            elif kind == "point":
+                light = PointLight(light_name)
+            else:
+                raise ValueError(f"light kind={kind} not supported")
+            color = config.get("color")
+            if color:
+                light.setColor(color)
+            light_node = self.render.attachNewNode(light)
+            hpr = config.get("hpr")
+            if hpr:
+                light_node.setHpr(*hpr)
+            pos = config.get("pos")
+            if pos:
+                light_node.setPos(pos)
+            if target == "nodes":
+                self.node_lights.append(light_node)
+            elif target == "edges":
+                self.edge_lights.append(light_node)
+            elif target == "both":
+                self.node_lights.append(light_node)
+                self.edge_lights.append(light_node)
+            else:
+                raise ValueError(f"nodes, edges, or both; got target={target}")
 
-        self.initial_pos = {nd: graph.nodes[nd]["pos"] for nd in graph.nodes}
-
-        # init lights
-        for i, dl in enumerate(Defaults.light_direct):
-            hpr = dl["hpr"]
-            dlight = DirectionalLight(f"directional_light_{i}")
-            dlnp = self.render.attachNewNode(dlight)
-            self.render.setLight(dlnp)
-            dlnp.setHpr(*hpr)
-        for i, al in enumerate(Defaults.light_ambient):
-            intensity = al["intensity"]
-            alight = AmbientLight(f"ambient_light_{i}")
-            alnp = self.render.attachNewNode(alight)
-            self.render.setLight(alnp)
-            alnp.setColor(intensity)
-        for i, pl in enumerate(Defaults.light_point):
-            pos = pl["pos"]
-            plight = PointLight(f"point_light_{i}")
-            plnp = self.render.attachNewNode(plight)
-            self.render.setLight(plnp)
-            plnp.setPos(*pos)
-
-        # init 3d models
-        for i, nd in enumerate(graph.nodes):
+    def _init_nodes(self):
+        logger.info("")
+        graph = self.g
+        for i, (n, nd) in enumerate(graph.nodes(data=True)):
             pid = f"node_{i}"
-            node: NodePath = self._init_panda3d_model(pid, node_fp)
+            try:
+                node: NodePath = self._init_panda3d_model(
+                    pid, self.node_fp, self.node_lights
+                )
+            except AttributeError:
+                logger.error("call _init_lights before _init_models")
             node.reparentTo(self.render)
-            utils.set_color(node, graph.nodes[nd]["color"])
-            node.setPos(*graph.nodes[nd]["pos"])
+            utils.set_color(node, nd["color"])
+            node.setPos(*nd["pos"])
             tpid = f"node_{i}_text"
-            text, text_ = self._init_panda3d_text(
-                tpid, graph.nodes[nd]["label"], graph.nodes[nd]["label_color"]
-            )
+            text, text_ = self._init_panda3d_text(tpid, nd["label"], nd["label_color"])
             text.reparentTo(node)
             text.setScale(tuple(1 / sc for sc in node.getScale()))
             text.setZ(node.getBounds().getRadius() * 1.1)
-            graph.nodes[nd]["model"] = node
-            graph.nodes[nd]["text_np"] = text
-            graph.nodes[nd]["text_tn"] = text_
+            nd["model"] = node
+            nd["text_np"] = text
+            nd["text_tn"] = text_
+            logger.debug(f"self.g.nodes[{n}] == {nd}")
 
-        for i, ed in enumerate(graph.edges):
+    def _init_edges(self):
+        logger.info("")
+        graph = self.g
+        for i, e in enumerate(graph.edges):
             if isinstance(graph, nx.MultiGraph):
-                n0, n1, nk = ed
+                u, v, ek = e
             else:
-                n0, n1 = ed
+                u, v = e
             pid = f"edge_{i}"
-            edge: NodePath = self._init_panda3d_model(pid, edge_fp)
+            edge: NodePath = self._init_panda3d_model(
+                pid, self.edge_fp, self.edge_lights
+            )
             edge.reparentTo(self.render)
-            utils.set_color(edge, graph.edges[ed]["color"])
+            utils.set_color(edge, graph.edges[e]["color"])
             # rotate into place
-            p0 = graph.nodes[n0]["pos"]
-            p1 = graph.nodes[n1]["pos"]
-            edge.setPos(*p0)
-            dist = linalg.norm(p0 - p1)
+            pu = graph.nodes[u]["pos"]
+            pv = graph.nodes[v]["pos"]
+            edge.setPos(*pu)
+            dist = linalg.norm(pu - pv)
             edge.setScale(1, 1, dist / 2)  # models have Z size of 2
-            d = np.array(p1 - p0, dtype=float)
+            d = np.array(pv - pu, dtype=float)
             for ix in np.argwhere(d == 0):
                 d[ix] = EPS
             if d[1] > 0:
@@ -263,32 +359,78 @@ class Nx3D(ShowBase):
             heading = heading / pi * 180
             edge.setH(heading)
             if isinstance(graph, nx.MultiGraph):
-                edge.setH(edge, nk / graph.graph["k"] * 360)
-
+                max_k = max([k for _, _, k in graph.edges])
+                edge.setH(edge, ek / max_k * 90)
             # TODO use lookAt
-
             tpid = f"edge_{i}_text"
             text, text_ = self._init_panda3d_text(
-                tpid, graph.edges[ed]["label"], graph.edges[ed]["label_color"]
+                tpid, graph.edges[e]["label"], graph.edges[e]["label_color"]
             )
             text.reparentTo(self.render)
-            text.setPos(tuple((p0 + p1) / 2.0))
-            graph.edges[ed]["model"] = edge
-            graph.edges[ed]["text_np"] = text
-            graph.edges[ed]["text_tn"] = text_
+            text.setPos(tuple((pu + pv) / 2.0))
+            graph.edges[e]["model"] = edge
+            graph.edges[e]["text_np"] = text
+            graph.edges[e]["text_tn"] = text_
 
-        self._init_camera()
-        self._init_gui(mouse)
-        if plot_axes:
-            self._init_axes(FILES["edge"])
-        if not mouse:
-            self._init_keyboard_camera()
-        self._init_state_update_task(state_trans_freq, state_trans_func)
+    def _init_models(self):
+        logger.info("")
+        self._init_nodes()
+        self._init_edges()
+
+    def _init_filters(self, bloom=True, cartoon=False):
+        if not self.cam:
+            return
+        logger.info("")
+        filters = CommonFilters(self.win, self.cam)
+        if bloom:
+            filters.setBloom()
+        if cartoon:
+            filters.setCartoonInk()
+
+    def _preprocess_labels(
+        self, node_labels, edge_labels, autolabel_edges, autolabel_nodes
+    ):
+        logger.info("")
+        if autolabel_nodes or autolabel_edges and any([edge_labels, node_labels]):
+            logger.info("overwriting labels, set autolabel False if undesired")
+        if autolabel_nodes:
+            node_labels = {nd: str(nd) for nd in self.g.nodes}
+        if autolabel_edges:
+            edge_labels = {ed: str(ed) for ed in self.g.edges}
+        return node_labels, edge_labels
+
+    def _init_filepaths(self):
+        logger.info("")
+        self.node_fp = FILES.get("node")
+        if isinstance(self.g, nx.MultiDiGraph):
+            self.edge_fp = FILES.get("edge_directed_bent")
+        elif isinstance(self.g, nx.MultiGraph):
+            self.edge_fp = FILES.get("edge_bent")
+        elif isinstance(self.g, nx.DiGraph):
+            self.edge_fp = FILES.get("edge_directed")
+        else:
+            self.edge_fp = FILES.get("edge")
+        if self.edge_fp is None or self.node_fp is None:
+            raise NotImplementedError
+
+    def _init_keyboard_input(self):
+        """register event handler for keyboard presses, update self._latest_key with keyboard input when called
+        https://docs.panda3d.org/1.10/python/programming/hardware-support/keyboard-support#keystroke-events
+        """
+        if self.camera:
+            self.buttonThrowers[0].node().setKeystrokeEvent("keystroke")
+            self.accept("keystroke", self.latestKeyboardEvent)
+        else:
+            logger.debug("not initializing keystroke listener")
 
     def _init_camera(self):
         self.disableMouse()
         bd = self.render.getBounds()
-        rad = np.linalg.norm(bd.getApproxCenter()) + bd.getRadius()
+        try:
+            rad = np.linalg.norm(bd.getApproxCenter()) + bd.getRadius()
+        except AssertionError:
+            assert os.getenv("DEBUG") is not None
+            rad = 5.0
         fov = min(self.camLens.fov) if self.camLens else 45
         radians_fov = fov / 180 * pi
         self.initial_camera_radius = rad / tan(radians_fov) * 1.75
@@ -298,31 +440,36 @@ class Nx3D(ShowBase):
 
     def _init_state_update_task(
         self,
-        state_trans_freq,
+        state_trans_delay,
         state_trans_func,
     ):
         self.state_trans_func = state_trans_func
-        if self.state_trans_func:
-            self.taskMgr.doMethodLater(
-                state_trans_freq, self.stateUpdateTask, "StateUpdate"
-            )
+        self.taskMgr.doMethodLater(
+            state_trans_delay, self.stateUpdateTask, "StateUpdate"
+        )
 
     def _init_panda3d_model(
         self,
         pid: str,
         egg_filepath: Path,
+        lights=[],
         scale: Union[float, Vec3] = 1.0,
         color: Optional[Vec4] = None,
     ):
-        if self.verbose:
-            print(f"loading model: {egg_filepath}")
-        _model = self.loader.loadModel(egg_filepath)
-        model = NodePath(pid)
-        _model.reparentTo(model)
-        model.setScale(scale)
+        logger.info(f"loading model: {egg_filepath}")
+        mod0 = self.loader.loadModel(egg_filepath)
+        if DO_LS:
+            mod0.ls()
+        mod0.setLightOff()
+        for lt in lights:
+            mod0.setLight(lt)
+        mod = NodePath(pid)
+        mod0.reparentTo(mod)
+        mod.setScale(scale)
         if color:
-            utils.set_color(model, color)
-        return model
+            print(f"color={color}")
+            utils.set_color(mod, color)
+        return mod
 
     def _init_panda3d_text(
         self,
@@ -390,11 +537,14 @@ class Nx3D(ShowBase):
             scale=scale,
         )
 
+    def latestKeyboardEvent(self, keyname):
+        """record latest keystroke"""
+        self._latest_key = keyname
+
     def stateUpdateTask(self, task):
         """main state update loop"""
-        if self.verbose:
-            print(f"stateUpdateTask from {task.name}")
-        self.state_trans_func(self.g, task.frame, task.delayTime)
+        if self.state_trans_func:
+            self.state_trans_func(self.g, task.frame, task.delayTime)
         for elm in utils.all_elements(self.g):
             assert all(isinstance(x, NodePath) for x in (elm["model"], elm["text_np"]))
             assert isinstance(elm["text_tn"], TextNode)
@@ -487,3 +637,16 @@ class Nx3D(ShowBase):
         self.camera.setP(-self.cam_phi)
         self.camera.setH(self.cam_theta)
         return Task.cont
+
+    def flush_latest_keystroke(self) -> Optional[str]:
+        """
+        Returns:
+            This function returns the latest keystroke (e.g. 'r') pressed by the user. If you call it before the user
+            presses another key (or before they press any) you will get None.
+
+        See https://docs.panda3d.org/1.10/python/programming/hardware-support/keyboard-support#keystroke-events for more
+        information on the keystroke monitoring event system.
+        """
+        k = self._latest_key
+        self._latest_key = None
+        return k

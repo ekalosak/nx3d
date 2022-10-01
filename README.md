@@ -5,10 +5,10 @@
 [![-missing pypi-](https://img.shields.io/pypi/v/nx3d)](https://pypi.org/project/nx3d/)
 [![-missing build status-](https://img.shields.io/github/workflow/status/ekalosak/nx3d/Build%20nx3d%20and%20publish%20to%20PyPi)](https://github.com/ekalosak/nx3d/actions)
 
-![-missing project maturity-](https://img.shields.io/badge/status-experimental-green)
+[![-missing project maturity-](https://img.shields.io/badge/status-experimental-green)](https://nx3d.readthedocs.io/en/latest/maturity.html)
 [![-missing download count-](https://img.shields.io/pypi/dw/nx3d)](https://pypistats.org/packages/nx3d)
 
-The missing 3D plotting functionality for the excellent `networkx` Python package.
+The missing link between `panda3d` and `networkx`.
 
 ![-missing gif of frucht graph-](https://raw.githubusercontent.com/ekalosak/nx3d/cf473d1dfab506ecd4044f4693c09aea0e1153ba/data/frucht.gif)
 
@@ -45,12 +45,12 @@ python -m nx3d mul dir
 
 ### Diffusion demo
 ```sh
-python -m nx3d diffusion
+python -m nx3d diffusion watt nolabel
 ```
 
 ### Game of Life demo
 ```sh
-python -m nx3d life
+python -m nx3d life nofilter
 ```
 
 # Usage

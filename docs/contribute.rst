@@ -1,6 +1,5 @@
 Contributing
 ================================
-
 Thank you for considering contributing to ``nx3d``.
 
 This project is free and open source, so the best way to contribute is by writing code.
@@ -32,6 +31,7 @@ package management:
 #. Install ``poetry`` for managing dependencies and virtual environments.
 #. Run ``poetry shell`` to open a clean shell. ``which python`` should be a poetry shim.
 #. Run ``poetry install`` to install the project, dependencies, and developer dependencies.
+#. Run ``poetry install . -e`` to install a development copy of ``nx3d``.
 
 Verify the setup by running ``python -m nx3d``. You should see a popup appear with a neat little graph widget you can
 spin around and zoom in on.
@@ -49,6 +49,7 @@ The pre-commit hooks defined in ``.pre-commit-config.yaml`` apply linting and fo
 use the pre-commit hooks before opening a PR.
 
 First time setup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 From this project's root, initialize pre-commit as follows:
 
@@ -67,9 +68,11 @@ From this project's root, initialize pre-commit as follows:
 
 First time updating the docs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-I used ``brew install python-sphinx``, see installation instructions on [www.sphinx-doc.org](https://www.sphinx-doc.org/en/master/usage/installation.html).
+I used ``brew install python-sphinx``, see installation instructions on
+`www.sphinx-doc.org <https://www.sphinx-doc.org/en/master/usage/installation.html>`_.
 
 7. Open a PR
 --------------------------------------
+Increment the version in the pyproject.toml and docs/conf.py files.
 When a PR is created or updated, code checks will be run and documentation preview will be generated.
 When a PR is merged, the code will be pushed to PyPi and the docs to ReadTheDocs.
