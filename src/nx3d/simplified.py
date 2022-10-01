@@ -37,8 +37,22 @@ def demo(**kwargs):
         g = nx.sedgewick_maze_graph()
     elif kwargs.pop("tetr", 0):
         g = nx.tetrahedral_graph()
+    elif kwargs.pop("comp", 0):
+        g = nx.complete_graph(5)
+    elif kwargs.pop("compbi", 0):
+        g = nx.complete_bipartite_graph(3, 5)
+    elif kwargs.pop("barb", 0):
+        g = nx.barbell_graph(10, 10)
+    elif kwargs.pop("loll", 0):
+        g = nx.lollipop_graph(10, 20)
     elif kwargs.pop("erdo", 0):
         g = nx.erdos_renyi_graph(45, 0.05)
+    elif kwargs.pop("watt", 0):
+        g = nx.watts_strogatz_graph(30, 3, 0.1)
+    elif kwargs.pop("bara", 0):
+        g = nx.barabasi_albert_graph(100, 5)
+    elif kwargs.pop("lobs", 0):
+        g = nx.random_lobster(8, 0.9, 0.9)
     else:
         g = nx.frucht_graph()
 
@@ -60,6 +74,9 @@ def demo(**kwargs):
         c = 0.5 / 3
         for e in g.edges:
             g.edges[e]["color"] = (c, c * 1.1, c, 1)
+
+    # The examples can optionally use these graph attributes as config - not common to the Nx3D that they pass kwargs to
+    g.graph["show_labels"] = not kwargs.pop("nolabel", 1)
 
     if kwargs.pop("diffusion", False):
         diffusion(g, **kwargs)

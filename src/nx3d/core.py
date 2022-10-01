@@ -2,6 +2,7 @@
 """
 
 import os
+import sys
 from dataclasses import dataclass
 from math import cos, isclose, pi, sin, sqrt, tan
 from pathlib import Path
@@ -9,30 +10,12 @@ from typing import Any, Callable, Optional, Union
 
 import networkx as nx
 import numpy as np
-from loguru import logger
-from numpy import linalg
-
-import os
-if os.getenv("DEBUG"):
-    from panda3d.core import loadPrcFileData
-
-    loadPrcFileData("", "want-directtools #t")
-    loadPrcFileData("", "want-tk #t")
-    DO_LS = True
-else:
-    DO_LS = False
-
-if not os.environ.get("DEBUG"):
-    logger.remove()
-if os.environ.get("TRACE"):
-    import sys
-    logger.add(sys.stderr, level="TRACE")
-
-
 from direct.filter.CommonFilters import CommonFilters
 from direct.gui.OnscreenText import OnscreenText
 from direct.showbase.ShowBase import ShowBase
 from direct.task import Task
+from loguru import logger
+from numpy import linalg
 from panda3d.core import (
     AmbientLight,
     DirectionalLight,
@@ -42,10 +25,22 @@ from panda3d.core import (
     TextNode,
     Vec3,
     Vec4,
+    loadPrcFileData,
 )
 
 from nx3d import utils
 from nx3d.types import Pos3
+
+if not os.environ.get("DEBUG"):
+    DO_LS = True
+    logger.remove()
+else:
+    DO_LS = False
+if os.environ.get("TRACE"):
+    logger.add(sys.stderr, level="TRACE")
+
+
+loadPrcFileData("", "background-color .03")
 
 FILES = {
     "node": Path(__file__).parent / "data/icosphere.bam",
@@ -76,17 +71,17 @@ class Defaults:
     node_label_color: Vec4 = (0, 1, 0, 1)
     edge_color: Vec4 = (0.3, 0.3, 0.3, 0.5)
     edge_label_color: Vec4 = (0, 1, 0, 1)
-    speed_theta: float = 96.0
-    speed_phi: float = 96.0
+    speed_theta: float = 82.0
+    speed_phi: float = 82.0
     speed_radius: float = 36.0
     lights = [
         ("directional", "nodes", {"hpr": (180, -20, 180), "color": 0.3}),
         ("directional", "edges", {"hpr": (180, -20, 0), "color": 0.1}),
         ("ambient", "both", {"color": 0.9}),
-        # ("ambient", "nodes", {"color": .9}),
+        ("point", "both", {"color": 0.5, "pos": (0, 0, 0)}),
     ]
     background_ambient_light_intensity: float = 1.0
-    state_trans_freq: float = 1.0
+    state_trans_delay: float = 1.0
 
 
 class Nx3D(ShowBase):
@@ -130,7 +125,7 @@ class Nx3D(ShowBase):
         autolabel_nodes: Use the string representation of the nx.Graph's nodes as labels.
         autolabel_edges: Use the string representation of the nx.Graph's edges as labels.
         mouse: Use mouse control rather than keyboard control.
-        state_trans_freq: How often, in seconds, to apply the <state_trans_func>.
+        state_trans_delay: How often, in seconds, to apply the <state_trans_func>.
         state_trans_func: A state transfer function for <g>'s state.
             Set attributes on graph components to update the render. If not None, the graph's nodes and edges must be
             annotated with 'color' and 'label' entries in the annotation dictionary i.e. g.nodes[nd]['color'] must exist for
@@ -153,13 +148,15 @@ class Nx3D(ShowBase):
         edge_color: Vec4 = Defaults.edge_color,
         edge_labels: dict = {},
         edge_label_color: Vec4 = Defaults.edge_label_color,
+        state_trans_delay: float = Defaults.state_trans_delay,
+        state_trans_func: Optional[Callable[[nx.Graph, int, float], Any]] = None,
+        nofilter=False,
+        nogui=False,
         plot_axes=False,
         autolabel=False,
         autolabel_nodes=False,
         autolabel_edges=False,
         mouse=False,
-        state_trans_freq: float = Defaults.state_trans_freq,
-        state_trans_func: Optional[Callable[[nx.Graph, int, float], Any]] = None,
         **kwargs,
     ):
         ShowBase.__init__(self, **kwargs)
@@ -184,14 +181,16 @@ class Nx3D(ShowBase):
         self._init_lights()
         self._init_models()
         self._init_camera()
-        self._init_filters()
-        self._init_gui(mouse)
+        if not nofilter:
+            self._init_filters()
+        if not nogui:
+            self._init_gui(mouse)
         self._init_keyboard_input()
         if plot_axes:
             self._init_axes(FILES["edge"])
         if not mouse:
             self._init_keyboard_camera()
-        self._init_state_update_task(state_trans_freq, state_trans_func)
+        self._init_state_update_task(state_trans_delay, state_trans_func)
 
     def _init_render_attrs(
         self,
@@ -229,7 +228,7 @@ class Nx3D(ShowBase):
                     "graph positions not _all_ pre-initialized creating default pos"
                 )
                 if len(graph) > 256:
-                    logger.warn(
+                    logger.warning(
                         f"initializing positions may take a while for large graphs n>256, len(g)={len(graph)}"
                     )
                 pos_scale = 2.0 * sqrt(len(graph.nodes))
@@ -358,13 +357,15 @@ class Nx3D(ShowBase):
         self._init_nodes()
         self._init_edges()
 
-    def _init_filters(self, bloom=True):
+    def _init_filters(self, bloom=False, cartoon=False):
         if not self.cam:
             return
         logger.info("")
+        filters = CommonFilters(self.win, self.cam)
         if bloom:
-            filters = CommonFilters(self.win, self.cam)
             filters.setBloom()
+        if cartoon:
+            filters.setCartoonInk()
 
     def _preprocess_labels(
         self, node_labels, edge_labels, autolabel_edges, autolabel_nodes
@@ -419,12 +420,12 @@ class Nx3D(ShowBase):
 
     def _init_state_update_task(
         self,
-        state_trans_freq,
+        state_trans_delay,
         state_trans_func,
     ):
         self.state_trans_func = state_trans_func
         self.taskMgr.doMethodLater(
-            state_trans_freq, self.stateUpdateTask, "StateUpdate"
+            state_trans_delay, self.stateUpdateTask, "StateUpdate"
         )
 
     def _init_panda3d_model(
