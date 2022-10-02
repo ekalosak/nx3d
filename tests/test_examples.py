@@ -1,88 +1,63 @@
+from itertools import islice
+
+import networkx as nx
 import pytest
 
 from nx3d.examples import gameoflife
 
 
-def test_grid_neighbors_2d(n):
-    if n < 2:
-        pass
-    nbrs = []
-    for nb in gameoflife._grid_neighbors_2d((0, 0), (n, n)):
-        nbrs.append(nb)
-        assert not any(x < 0 for x in nb)
-    assert len(nbrs) == 3
-    assert (1, 0) in nbrs
-    assert (0, 1) in nbrs
-    assert (1, 1) in nbrs
-
-    nbrs = []
-    for nb in gameoflife._grid_neighbors_2d((n - 1, n - 1), (n, n)):
-        nbrs.append(nb)
-        assert not any(x >= n for x in nb)
-    assert len(nbrs) == 3
-
-    if n < 3:
-        pass
-    nbrs = []
-    for nb in gameoflife._grid_neighbors_2d((0, 1), (n, n)):
-        nbrs.append(nb)
-        assert not any(x < 0 for x in nb)
-    assert len(nbrs) == 5
-
-    nbrs = []
-    for nb in gameoflife._grid_neighbors_2d((1, 1), (n, n)):
-        nbrs.append(nb)
-    assert len(nbrs) == 8
+@pytest.fixture
+def gg(g):
+    gameoflife._reset_board(g, n_live=0)
+    g = nx.convert_node_labels_to_integers(g)
+    return g
 
 
-def test_make_grid_2d(n):
-    _ = gameoflife._make_grid_2d((n, n))
+def test_gol_graph():
+    dim = (3, 3, 3)
+    g = gameoflife.grid_gol_graph(dim)
+    gameoflife._init_pos(g)
+    assert (1, 3, 0) not in g
+    assert (0, 0, 0) in g[(1, 1, 1)]
 
 
-@pytest.mark.parametrize("kind", gameoflife.BOARD_KINDS)
-def test_make_board(n, kind):
-    g = gameoflife._make_board(kind, (n, n))
-    for nd in g:
-        assert g.nodes[nd]["val"] == 0
+def test_do_life_0(gg):
+    for n in gg:
+        break
+    gg.nodes[n]["val"] = 1
+    gameoflife._do_life(gg, None, None)
+    for n in gg:
+        assert gg.nodes[n]["val"] == 0, "lone node should die"
 
 
-@pytest.mark.parametrize("kind", gameoflife.BOARD_KINDS)
-def test_do_life_0(n, kind):
-    g = gameoflife._make_board(kind, (n, n))
-    g.nodes[(0, 0)]["val"] = 1
+def test_do_life_1(gg):
+    g = gg
+    deg = [d[1] for d in nx.degree(g)]  # returns [(n, deg)]
+    nnbs = [2, 3]
+    if max(deg) < max(nnbs):
+        pytest.skip(f"need at least one node with degree >= {max(nnbs)}")
+    assert all(
+        isinstance(n, int) for n in g
+    ), "nodes should be all int by this point via _init_pos"
+    n = deg.index(max(deg))
+    g.nodes[n]["val"] = 1
+    for nnb in nnbs:
+        for nbr in islice(g[n].keys(), nnb):
+            g.nodes[nbr]["val"] = 1
+        gameoflife._do_life(g, 0, 0)
+        assert g.nodes[n]["val"] == 1, f"node with {nnb} live neighbors shoud survive"
+
+
+def test_do_life_2(gg):
+    g = gg
+    deg = [d[1] for d in nx.degree(g)]
+    if max(deg) < 3:
+        pytest.skip("need at least one node with degree >= 3")
+    assert all(
+        isinstance(n, int) for n in g
+    ), "nodes should be all int by this point via _init_pos"
+    n = deg.index(max(deg))
+    for nbr in islice(g[n], 3):
+        g.nodes[nbr]["val"] = 1
     gameoflife._do_life(g, 0, 0)
-    for nd in g:
-        assert g.nodes[nd]["val"] == 0
-
-
-@pytest.mark.parametrize("kind", gameoflife.BOARD_KINDS)
-def test_do_life_1(n, kind):
-    g = gameoflife._make_board(kind, (n, n))
-    if n < 2:
-        pass
-    g.nodes[(0, 0)]["val"] = 1
-    g.nodes[(1, 0)]["val"] = 1
-    g.nodes[(2, 0)]["val"] = 1
-    gameoflife._do_life(g, 0, 0)
-    assert g.nodes[(0, 0)]["val"] == 0
-    assert g.nodes[(1, 0)]["val"] == 1
-    assert g.nodes[(2, 0)]["val"] == 0
-    gameoflife._do_life(g, 0, 0)
-    for nd in g:
-        assert g.nodes[nd]["val"] == 0
-
-
-@pytest.mark.parametrize("kind", gameoflife.BOARD_KINDS)
-def test_do_life_2(n, kind):
-    g = gameoflife._make_board(kind, (n, n))
-    g.nodes[(0, 0)]["val"] = 1
-    g.nodes[(2, 0)]["val"] = 1
-    g.nodes[(1, 2)]["val"] = 1
-    gameoflife._do_life(g, 0, 0)
-    assert g.nodes[(0, 0)]["val"] == 0
-    assert g.nodes[(2, 0)]["val"] == 0
-    assert g.nodes[(1, 2)]["val"] == 0
-    assert g.nodes[(1, 1)]["val"] == 1
-    gameoflife._do_life(g, 0, 0)
-    for nd in g:
-        assert g.nodes[nd]["val"] == 0
+    assert g.nodes[n]["val"] == 1, "node with two live neighbors shoud survive"

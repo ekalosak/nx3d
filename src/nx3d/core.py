@@ -41,6 +41,8 @@ elif os.environ.get("DEBUG"):
     logger.add(sys.stderr, level="DEBUG")
 elif os.environ.get("INFO"):
     logger.add(sys.stderr, level="INFO")
+else:
+    logger.add(sys.stderr, level="WARNING")
 
 
 loadPrcFileData("", "background-color .03")
@@ -212,6 +214,21 @@ class Nx3D(ShowBase):
             self._init_keyboard_camera()
         self._init_state_update_task(state_trans_delay, state_trans_func)
 
+    # TODO
+    # setter and getter for node and edge data that propagates to render attributes
+
+    @property
+    def nodes(self):
+        return self.g.nodes
+
+    @property
+    def edges(self):
+        return self.g.edges
+
+    @property
+    def graph(self):
+        return self.g.graph
+
     def _init_render_attrs(
         self,
         node_color,
@@ -332,27 +349,39 @@ class Nx3D(ShowBase):
                 u, v, ek = e
             else:
                 u, v = e
+            pu = graph.nodes[u]["pos"]
+            pv = graph.nodes[v]["pos"]
+            if all(pu == pv):
+                logger.warning(f"nodes {(u, v)} share position")
+                pu = graph.nodes[u]["pos"] = pu + EPS * (1 - np.random.random())
+            dist = linalg.norm(pu - pv)
             pid = f"edge_{i}"
             edge: NodePath = self._init_panda3d_model(
                 pid, self.edge_fp, self.edge_lights
             )
             edge.reparentTo(self.render)
+            tpid = f"edge_{i}_text"
+            text, text_ = self._init_panda3d_text(
+                tpid, graph.edges[e]["label"], graph.edges[e]["label_color"]
+            )
+            text.reparentTo(self.render)
+            graph.edges[e]["model"] = edge
+            graph.edges[e]["text_np"] = text
+            graph.edges[e]["text_tn"] = text_
             utils.set_color(edge, graph.edges[e]["color"])
             # rotate into place
-            pu = graph.nodes[u]["pos"]
-            pv = graph.nodes[v]["pos"]
+            text.setPos(tuple((pu + pv) / 2.0))
             edge.setPos(*pu)
-            dist = linalg.norm(pu - pv)
             edge.setScale(1, 1, dist / 2)  # models have Z size of 2
             d = np.array(pv - pu, dtype=float)
             for ix in np.argwhere(d == 0):
                 d[ix] = EPS
             if d[1] > 0:
                 pitch = -np.arccos(d[2] / dist)
-                assert pitch < 0
+                # assert pitch < 0
             else:
                 pitch = np.arccos(d[2] / dist)
-                assert pitch > 0
+                # assert pitch > 0
             pitch = pitch / pi * 180
             edge.setP(pitch)
             heading = -np.arctan(d[0] / d[1])
@@ -362,15 +391,6 @@ class Nx3D(ShowBase):
                 max_k = max([k for _, _, k in graph.edges])
                 edge.setH(edge, ek / max_k * 90)
             # TODO use lookAt
-            tpid = f"edge_{i}_text"
-            text, text_ = self._init_panda3d_text(
-                tpid, graph.edges[e]["label"], graph.edges[e]["label_color"]
-            )
-            text.reparentTo(self.render)
-            text.setPos(tuple((pu + pv) / 2.0))
-            graph.edges[e]["model"] = edge
-            graph.edges[e]["text_np"] = text
-            graph.edges[e]["text_tn"] = text_
 
     def _init_models(self):
         logger.info("")
