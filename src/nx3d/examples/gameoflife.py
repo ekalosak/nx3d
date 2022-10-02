@@ -9,13 +9,14 @@ Interior nodes have 8 neighbors
 """
 import itertools as itt
 import random
-from math import log
 from typing import Optional
 
 import networkx as nx
 import numpy as np
+from loguru import logger
 
 from nx3d.core import Nx3D
+from nx3d.utils import get_pos_scale
 
 COLOR_DEAD = (0.2, 0.2, 0.2, 1)
 COLOR_LIVE = (0.8, 0.8, 0.8, 1)
@@ -54,7 +55,8 @@ def _clear_board(g):
 
 
 def _init_pos(g):
-    pos = nx.spring_layout(g, dim=3)
+    scale = get_pos_scale(g)
+    pos = nx.spring_layout(g, dim=3, scale=scale)
     for n, nd in g.nodes(data=True):
         if "pos" in nd:
             continue
@@ -73,7 +75,7 @@ def _reset_board(g, n_live: Optional[int] = None):
     _init_pos(g)
     _clear_board(g)
     if n_live is None:
-        n_live = int(log(len(g))) + 1
+        n_live = len(g) // 2
     elif n_live <= 0:
         return
     for n in random.sample(g.nodes, k=n_live):
@@ -82,22 +84,24 @@ def _reset_board(g, n_live: Optional[int] = None):
 
 def _do_life(g: nx.Graph, di, dt):
     if all(nd["val"] == nd["last_val"] for _, nd in g.nodes(data=True)):
-        _reset_board(g, n_live=len(g) // 4)
-    for n in g:
-        g.nodes[n]["last_val"] = g.nodes[n]["val"]
-    vals = {}
-    for nd, nbrsdict in g.adjacency():
-        live_nbrs = 0
-        nbrs = list(nbrsdict.keys())
-        live_nbrs = sum(g.nodes[nbr]["val"] for nbr in nbrs)
-        if live_nbrs == 3:
-            vals[nd] = 1
-        elif g.nodes[nd]["val"] and live_nbrs == 2:
-            vals[nd] = 1
-        else:
-            vals[nd] = 0
-    for nd in g:
-        g.nodes[nd]["val"] = vals[nd]
+        logger.success("dead board, resetting")
+        _reset_board(g)
+    else:
+        for n in g:
+            g.nodes[n]["last_val"] = g.nodes[n]["val"]
+        vals = {}
+        for nd, nbrsdict in g.adjacency():
+            live_nbrs = 0
+            nbrs = list(nbrsdict.keys())
+            live_nbrs = sum(g.nodes[nbr]["val"] for nbr in nbrs)
+            if live_nbrs == 3:
+                vals[nd] = 1
+            elif g.nodes[nd]["val"] and live_nbrs == 2:
+                vals[nd] = 1
+            else:
+                vals[nd] = 0
+        for nd in g:
+            g.nodes[nd]["val"] = vals[nd]
     _update_colors(g)
 
 

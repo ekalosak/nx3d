@@ -31,6 +31,7 @@ from panda3d.core import (
 
 from nx3d import utils
 from nx3d.types import Pos3
+from nx3d.utils import get_pos_scale
 
 DO_LS = False
 logger.remove()
@@ -174,7 +175,7 @@ class Nx3D(ShowBase):
         **kwargs,
     ):
         ShowBase.__init__(self, **kwargs)
-        logger.info("")
+        logger.info(graph)
         self.g = graph
         self.time_elapsed = 0.0
         self._latest_key = None
@@ -191,6 +192,7 @@ class Nx3D(ShowBase):
             autolabel_nodes = autolabel_edges = True
         self._init_positions(pos)
         self._init_render_attrs(
+            node_size,
             node_color,
             edge_color,
             node_labels,
@@ -231,6 +233,7 @@ class Nx3D(ShowBase):
 
     def _init_render_attrs(
         self,
+        node_size,
         node_color,
         edge_color,
         node_labels,
@@ -246,7 +249,7 @@ class Nx3D(ShowBase):
         graph = self.g
         for n, nd in graph.nodes(data=True):
             nd["color"] = nd.get("color", node_color)
-            nd["shape"] = nd.get("shape", node_color)
+            nd["size"] = nd.get("size", node_size)
             nd["label"] = nd.get("label", self.node_labels.get(n, ""))
             nd["label_color"] = nd.get("label_color", node_label_color)
         for u, v, ed in graph.edges.data():
@@ -268,7 +271,7 @@ class Nx3D(ShowBase):
                     logger.warning(
                         f"initializing positions may take a while for large graphs n>256, len(g)={len(graph)}"
                     )
-                pos_scale = 2.0 * sqrt(len(graph.nodes))
+                pos_scale = get_pos_scale(graph)
                 pos = nx.spring_layout(graph, dim=3, scale=pos_scale)
                 for n, nd in graph.nodes(data=True):
                     nd["pos"] = pos[n]
@@ -328,9 +331,11 @@ class Nx3D(ShowBase):
                 )
             except AttributeError:
                 logger.error("call _init_lights before _init_models")
+                raise
             node.reparentTo(self.render)
             utils.set_color(node, nd["color"])
             node.setPos(*nd["pos"])
+            node.setScale(nd["size"])
             tpid = f"node_{i}_text"
             text, text_ = self._init_panda3d_text(tpid, nd["label"], nd["label_color"])
             text.reparentTo(node)

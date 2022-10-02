@@ -91,6 +91,6 @@ def demo(**kwargs):
     if kwargs.pop("diffusion", False):
         diffusion(g, windowtitle="Nx3D - diffusion demo", **kwargs)
     elif kwargs.pop("life", False):
-        game_of_life(windowtitle="Nx3D - Game of Life demo", **kwargs)
+        game_of_life(g, windowtitle="Nx3D - Game of Life demo", **kwargs)
     else:
         plot(g, **kwargs)

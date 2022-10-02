@@ -1,4 +1,5 @@
 from itertools import chain, repeat
+from math import sqrt
 
 from networkx import Graph
 from panda3d.core import Material, NodePath, Vec4
@@ -21,3 +22,7 @@ def all_elements(g: Graph):
         else:
             elm = g.edges[ob]
         yield elm
+
+
+def get_pos_scale(g):
+    return 2.0 * sqrt(len(g.nodes))
