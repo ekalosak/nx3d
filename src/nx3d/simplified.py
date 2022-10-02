@@ -1,5 +1,7 @@
 """ This source provides the simplified plotting functionality you can use if you don't want to deal with base classes
 or overmuch customization. """
+import random
+
 import networkx as nx
 
 from nx3d.core import Nx3D
@@ -53,6 +55,14 @@ def demo(**kwargs):
         g = nx.barabasi_albert_graph(30, 3)
     elif kwargs.pop("lobs", 0):
         g = nx.random_lobster(8, 0.6, 0.2)
+    elif kwargs.pop("chor", 0):
+        g = nx.chordal_cycle_graph(7)
+    elif kwargs.pop("bull", 0):
+        g = nx.bull_graph()
+    elif kwargs.pop("bala", 0):
+        g = nx.balanced_tree(3, 3)
+    elif kwargs.pop("atla", 0):
+        g = random.sample(nx.graph_atlas_g(), 1).pop()
     else:
         g = nx.frucht_graph()
 
@@ -81,6 +91,6 @@ def demo(**kwargs):
     if kwargs.pop("diffusion", False):
         diffusion(g, windowtitle="Nx3D - diffusion demo", **kwargs)
     elif kwargs.pop("life", False):
-        game_of_life(windowtitle="Nx3D - Game of Life demo", **kwargs)
+        game_of_life(g, windowtitle="Nx3D - Game of Life demo", **kwargs)
     else:
         plot(g, **kwargs)

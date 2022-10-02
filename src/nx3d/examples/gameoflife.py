@@ -1,11 +1,4 @@
-""" This source implements the Game of Life on:
-- a 2D gridded finite Graph
-
-# TODO
-- Use nx.grid_2d_graph
-- a 3D gridded finite Graph
-- a 2D gridded finite Graph embedded in 3D on a sphere
-- a 2D gridded finite DiGraph embedded on a cylinder, taurus, mobius strip (need 2 layers z to orient), klein bottle
+""" This source implements the Game of Life on arbitrary graphs.
 
 The rules are:
 - node with 2 or 3 live neighbors lives
@@ -16,117 +9,103 @@ Interior nodes have 8 neighbors
 """
 import itertools as itt
 import random
+from typing import Optional
 
 import networkx as nx
 import numpy as np
+from loguru import logger
 
 from nx3d.core import Nx3D
+from nx3d.utils import get_pos_scale
 
-BOARD_KINDS = ["2Dgrid"]
 COLOR_DEAD = (0.2, 0.2, 0.2, 1)
 COLOR_LIVE = (0.8, 0.8, 0.8, 1)
 
 
-def _grid_neighbors_2d(nd, size):
-    """handle edge cases for a finite grid"""
-    ds = [1, 0, -1]
-    for dy in ds:
-        for dx in ds:
-            if dx == 0 and dy == 0:
-                continue
-            y = nd[0] + dy
-            x = nd[1] + dx
-            if x < 0 or y < 0 or x >= size[1] or y >= size[0]:
-                continue
-            yield (y, x)
-
-
-def _make_grid_2d(size: tuple[int, int]):
-    """start from upper left origin, increase in y is down, increase in x is right"""
-    g = nx.Graph()
-    # g = nx.grid_2d_graph(*size)
-    # g = nx.Graph()
-    for y in range(size[0]):
-        for x in range(size[1]):
-            nd = (y, x)
-            g.add_node(nd)
-            g.nodes[nd]["color"] = COLOR_DEAD
-            g.nodes[nd]["pos"] = np.array(
-                (int(x - size[0] / 2), 0, int(size[1] / 2 - y))
-            )
-    for y in range(size[0]):
-        for x in range(size[1]):
-            n0 = (y, x)
-            for n1 in _grid_neighbors_2d(n0, size):
-                g.add_edge(n0, n1)
-    return g
+def grid_gol_graph(dim):
+    # n1 connected to nodes on 2x2 hypercube centered at n1
+    # that is, add in the diagonals
+    g = nx.grid_graph(dim)
+    edges = set()
+    for n in g:
+        for nbr in g[n]:
+            for i in range(len(dim)):
+                if n[i] == nbr[i]:
+                    planar_nodes = set()
+                    for adja in itt.combinations_with_replacement([-1, 0, 1], len(dim)):
+                        n1 = tuple([ni - ai for ni, ai in zip(nbr, adja)])
+                        planar_nodes.add(n1)
+                    edges.update([(n, pn) for pn in planar_nodes])
+    g.add_edges_from(edges)
+    g1 = nx.grid_graph(dim)
+    return nx.induced_subgraph(g, g1.nodes)
 
 
 def _update_colors(g):
     """black if alive else white"""
-    for nd in g:
-        val = g.nodes[nd]["val"]
-        g.nodes[nd]["color"] = COLOR_LIVE if val else COLOR_DEAD
-
-
-def _grid_to_numpy(g):
-    my = max(y for y, _ in g)
-    mx = max(x for _, x in g)
-    bd = np.empty((my + 1, mx + 1))
-    for nd in g:
-        bd[nd] = g.nodes[nd]["val"]
-    return bd
-
-
-def print_board(g):
-    print(_grid_to_numpy(g))
+    for _, nd in g.nodes(data=True):
+        val = nd["val"]
+        nd["color"] = COLOR_LIVE if val else COLOR_DEAD
 
 
 def _clear_board(g):
-    for nd in g:
-        g.nodes[nd]["val"] = 0
+    for n in g:
+        g.nodes[n]["val"] = 0
+        g.nodes[n]["last_val"] = 0
 
 
-def _reset_grid(g, n_live: int):
-    _clear_board(g)
-    bd = _grid_to_numpy(g)
-    yixs = range(bd.shape[0])
-    xixs = range(bd.shape[1])
-    ixs = list(itt.product(yixs, xixs))
-    for ix in random.sample(ixs, k=n_live):
-        g.nodes[ix]["val"] = 1
-
-
-def _make_board(kind: str, size: tuple[int, int]):
-    if kind == "2Dgrid":
-        g = _make_grid_2d(size)
-        _reset_grid(g, 0)
-    else:
-        raise ValueError(f"board kind {kind} not supported")
-    _update_colors(g)
-    return g
-
-
-def _do_life(g: nx.Graph, di: int, dt: float):
-    if all(g.nodes[nd]["val"] == 0 for nd in g):
-        _reset_grid(g, n_live=len(g) // 4)
-    vals = {}
-    for nd, nbrsdict in g.adjacency():
-        live_nbrs = 0
-        nbrs = list(nbrsdict.keys())
-        live_nbrs = sum(g.nodes[nbr]["val"] for nbr in nbrs)
-        if live_nbrs == 3:
-            vals[nd] = 1
-        elif g.nodes[nd]["val"] and live_nbrs == 2:
-            vals[nd] = 1
+def _init_pos(g):
+    scale = get_pos_scale(g)
+    pos = nx.spring_layout(g, dim=3, scale=scale)
+    for n, nd in g.nodes(data=True):
+        if "pos" in nd:
+            continue
+        elif isinstance(n, tuple):
+            if len(n) == 1:
+                nd["pos"] = np.array([n[0], 0, 0])
+            elif len(n) == 2:
+                nd["pos"] = np.array([n[0], n[1], 0])
+            else:
+                nd["pos"] = np.array(n[:3])
         else:
-            vals[nd] = 0
-    for nd in g:
-        g.nodes[nd]["val"] = vals[nd]
+            nd["pos"] = pos[n]
+
+
+def _reset_board(g, n_live: Optional[int] = None):
+    _init_pos(g)
+    _clear_board(g)
+    if n_live is None:
+        n_live = len(g) // 2
+    elif n_live <= 0:
+        return
+    for n in random.sample(g.nodes, k=n_live):
+        g.nodes[n]["val"] = 1
+
+
+def _do_life(g: nx.Graph, di, dt):
+    if all(nd["val"] == nd["last_val"] for _, nd in g.nodes(data=True)):
+        logger.success("dead board, resetting")
+        _reset_board(g)
+    else:
+        for n in g:
+            g.nodes[n]["last_val"] = g.nodes[n]["val"]
+        vals = {}
+        for nd, nbrsdict in g.adjacency():
+            live_nbrs = 0
+            nbrs = list(nbrsdict.keys())
+            live_nbrs = sum(g.nodes[nbr]["val"] for nbr in nbrs)
+            if live_nbrs == 3:
+                vals[nd] = 1
+            elif g.nodes[nd]["val"] and live_nbrs == 2:
+                vals[nd] = 1
+            else:
+                vals[nd] = 0
+        for nd in g:
+            g.nodes[nd]["val"] = vals[nd]
     _update_colors(g)
 
 
-def game_of_life(g=None, size=(32, 32), **kwargs):
+def game_of_life(g=grid_gol_graph((16, 16)), **kwargs):
     """This function opens a popup that runs the Game of Life.
 
     ``
@@ -136,9 +115,7 @@ def game_of_life(g=None, size=(32, 32), **kwargs):
     Args:
         kwargs: passed to Nx3D.__init__
     """
-    if not g:
-        g = _make_board("2Dgrid", size)
-    for nd in g.nodes:
-        assert len(g.nodes[nd]["pos"]) == 3
+    _reset_board(g)
+    g = nx.convert_node_labels_to_integers(g)
     app = Nx3D(g, state_trans_func=_do_life, **kwargs)
     app.run()

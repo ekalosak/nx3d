@@ -1,4 +1,10 @@
-# Fri Oct 1 2022
+# Sun Oct 2 2022
+22.10.4
+- game of life on a graph
+- edge case handling in core.py for when node are on top of each other i.e. p1 == p0
+- small refactoring in core.py
+
+# Sat Oct 1 2022
 22.10.3
 - updated description
 
