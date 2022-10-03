@@ -54,23 +54,6 @@ def _clear_board(g):
         g.nodes[n]["last_val"] = 0
 
 
-def _init_pos(g):
-    scale = get_pos_scale(g)
-    pos = nx.spring_layout(g, dim=3, scale=scale)
-    for n, nd in g.nodes(data=True):
-        if "pos" in nd:
-            continue
-        elif isinstance(n, tuple):
-            if len(n) == 1:
-                nd["pos"] = np.array([n[0], 0, 0])
-            elif len(n) == 2:
-                nd["pos"] = np.array([n[0], n[1], 0])
-            else:
-                nd["pos"] = np.array(n[:3])
-        else:
-            nd["pos"] = pos[n]
-
-
 def _reset_board(g, n_live: Optional[int] = None):
     _init_pos(g)
     _clear_board(g)

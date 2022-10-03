@@ -25,4 +25,26 @@ def all_elements(g: Graph):
 
 
 def get_pos_scale(g):
+    """heuristic for how far away nodes should be"""
     return 2.0 * sqrt(len(g.nodes))
+
+
+def init_pos(g):
+    """Set a 'pos' render attribute on all nodes in the graph.
+    If the graph has tuples for nodes, they're assumed to be positions and will be used to set the render attribute.
+    """
+    scale = get_pos_scale(g)
+    pos = nx.spring_layout(g, dim=3, scale=scale)
+    for n, nd in g.nodes(data=True):
+        if "pos" in nd:
+            assert len(nd["pos"]) == 3, "render attribute position must be 3D"
+            continue
+        elif isinstance(n, tuple):
+            if len(n) == 1:
+                nd["pos"] = np.array([n[0], 0, 0])
+            elif len(n) == 2:
+                nd["pos"] = np.array([n[0], n[1], 0])
+            else:
+                nd["pos"] = np.array(n[:3])
+        else:
+            nd["pos"] = pos[n]

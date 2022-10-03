@@ -10,7 +10,7 @@
 
 The missing link between `panda3d` and `networkx`.
 
-![-missing gif of frucht graph-](https://raw.githubusercontent.com/ekalosak/nx3d/cf473d1dfab506ecd4044f4693c09aea0e1153ba/data/frucht.gif)
+![-missing gif of frucht graph-](https://raw.githubusercontent.com/ekalosak/nx3d/main/docs/data/frucht_thin.gif)
 
 # Installation
 ```sh
