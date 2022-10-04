@@ -5,7 +5,7 @@ import random
 import networkx as nx
 
 from nx3d.core import Nx3D
-from nx3d.examples import diffusion, game_of_life
+from nx3d.examples import diffusion, gameoflife
 
 
 def plot(g: nx.Graph, debug=False, **kwargs):
@@ -89,8 +89,8 @@ def demo(**kwargs):
     g.graph["show_labels"] = not kwargs.pop("nolabel", 1)
 
     if kwargs.pop("diffusion", False):
-        diffusion(g, windowtitle="Nx3D - diffusion demo", **kwargs)
+        diffusion.diffusion(g, windowtitle="Nx3D - diffusion demo", **kwargs)
     elif kwargs.pop("life", False):
-        game_of_life(g, windowtitle="Nx3D - Game of Life demo", **kwargs)
+        gameoflife.game_of_life(g, windowtitle="Nx3D - Game of Life demo", **kwargs)
     else:
         plot(g, **kwargs)

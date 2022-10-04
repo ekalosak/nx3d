@@ -675,3 +675,20 @@ class Nx3D(ShowBase):
         k = self._latest_key
         self._latest_key = None
         return k
+
+    def to_rgb_array(self):
+        """
+        https://github.com/ikalevatykh/panda3d_viewer/blob/master/panda3d_viewer/viewer_app.py
+        """
+        requested_format = "RGB"
+        if not self.win:
+            return
+        texture = self.win.get_screenshot()
+        if texture is None:
+            return None
+        xsize = texture.get_x_size()
+        ysize = texture.get_y_size()
+        dsize = len(requested_format)
+        image = texture.get_ram_image_as(requested_format)
+        array = np.asarray(image).reshape((ysize, xsize, dsize))
+        return np.flipud(array)
