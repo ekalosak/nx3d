@@ -26,6 +26,10 @@ def _init_diff_graph(g):
         color = (col0 + col1) / 2
         g.edges[e]["color"] = tuple(color)
         g.edges[e]["label"] = ""
+    g.graph["reset"] = True
+    if "show_labels" not in g.graph:
+        g.graph["show_labels"] = True
+
     logger.info(f"{len(g)} nodes")
     logger.info(f"EPS={EPS}")
     logger.info(f"Restart when total_delta < {EPS * log(len(g))}")
@@ -56,6 +60,8 @@ def _diffuse(g: nx.Graph, di: int, dt: float):
     if total_delta < EPS * log(len(g)):
         logger.success("Restarting...")
         _init_diff_graph(g)
+    else:
+        g.graph["reset"] = False
 
 
 def diffusion(g, **kwargs):

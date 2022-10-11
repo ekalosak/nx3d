@@ -277,17 +277,6 @@ optional = false
 python-versions = ">=3.6"
 
 [[package]]
-name = "pymesh"
-version = "1.0.2"
-description = "Library for manipulating (Translate, Rotate and Scale) 3D data using numpy."
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.dependencies]
-numpy = "*"
-
-[[package]]
 name = "pyparsing"
 version = "3.0.9"
 description = "pyparsing module - Classes and methods to define and execute parsing grammars"
@@ -359,7 +348,7 @@ dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<3.12"
-content-hash = "a79b1f2a1cff2f57d6f2e94b3544abfb15dcdb1f8c8c8cda0fe37f8cb8bf932e"
+content-hash = "d70863dac511774033b887f6d6c879cf220ac0224e587e645ffcc07f9cb5bbb4"
 
 [metadata.files]
 attrs = []
@@ -395,7 +384,6 @@ pluggy = []
 py = []
 pycodestyle = []
 pyflakes = []
-pymesh = []
 pyparsing = []
 pytest = []
 scipy = []
