@@ -55,7 +55,6 @@ def _clear_board(g):
 
 
 def _reset_board(g, n_live: Optional[int] = None):
-    _init_pos(g)
     _clear_board(g)
     if n_live is None:
         n_live = len(g) // 2

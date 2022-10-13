@@ -165,6 +165,7 @@ class Nx3D(ShowBase):
         state_trans_func: Optional[Callable[[nx.Graph, int, float], Any]] = None,
         nofilter=False,
         nogui=False,
+        nolabels=False,
         plot_axes=False,
         autolabel=False,
         autolabel_nodes=False,
@@ -179,6 +180,8 @@ class Nx3D(ShowBase):
         self.g = graph
         self.time_elapsed = 0.0
         self._latest_key = None
+        if nolabels:
+            self.g.graph["show_labels"] = False
 
         if self.win:
             properties = WindowProperties()

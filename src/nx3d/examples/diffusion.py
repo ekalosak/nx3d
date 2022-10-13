@@ -9,8 +9,8 @@ from loguru import logger
 from nx3d.core import Nx3D
 
 DIFFUSION_RATE = 0.05  # scale diffusion rate per update call
-DIFFUSION_STEP_PER_SEC = 4
-EPS = 0.3  # per node "not diffusing" game over parameter
+DIFFUSION_STEP_PER_SEC = 10
+EPS = 0.03  # per node "not diffusing" game over parameter
 
 
 def _init_diff_graph(g):
@@ -57,7 +57,8 @@ def _diffuse(g: nx.Graph, di: int, dt: float):
         g.edges[e]["color"] = tuple((new_col0 + new_col1) / 2)
         g.edges[e]["label"] = f"{(abs(sum(dc))):.1f}" if g.graph["show_labels"] else ""
     logger.debug(f"total_delta: {total_delta}")
-    if total_delta < EPS * log(len(g)):
+    # if total_delta < EPS * log(len(g)):
+    if total_delta < EPS * len(g.edges):
         logger.success("Restarting...")
         _init_diff_graph(g)
     else:

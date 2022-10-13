@@ -1,4 +1,51 @@
 [[package]]
+name = "aiohttp"
+version = "3.8.3"
+description = "Async http client/server framework (asyncio)"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+aiosignal = ">=1.1.2"
+async-timeout = ">=4.0.0a3,<5.0"
+attrs = ">=17.3.0"
+charset-normalizer = ">=2.0,<3.0"
+frozenlist = ">=1.1.1"
+multidict = ">=4.5,<7.0"
+yarl = ">=1.0,<2.0"
+
+[package.extras]
+speedups = ["aiodns", "brotli", "cchardet"]
+
+[[package]]
+name = "aiosignal"
+version = "1.2.0"
+description = "aiosignal: a list of registered asynchronous callbacks"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+frozenlist = ">=1.1.0"
+
+[[package]]
+name = "appdirs"
+version = "1.4.4"
+description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
+category = "dev"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "async-timeout"
+version = "4.0.2"
+description = "Timeout context manager for asyncio programs"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[[package]]
 name = "attrs"
 version = "22.1.0"
 description = "Classes Without Boilerplate"
@@ -35,6 +82,17 @@ jupyter = ["ipython (>=7.8.0)", "tokenize-rt (>=3.2.0)"]
 uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
+name = "charset-normalizer"
+version = "2.1.1"
+description = "The Real First Universal Charset Detector. Open, modern and actively maintained alternative to Chardet."
+category = "dev"
+optional = false
+python-versions = ">=3.6.0"
+
+[package.extras]
+unicode_backport = ["unicodedata2"]
+
+[[package]]
 name = "click"
 version = "8.1.3"
 description = "Composable command line interface toolkit"
@@ -54,6 +112,32 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
+name = "contourpy"
+version = "1.0.5"
+description = "Python library for calculating contours of 2D quadrilateral grids"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+numpy = ">=1.16"
+
+[package.extras]
+test-no-codebase = ["pillow", "matplotlib", "pytest"]
+test-minimal = ["pytest"]
+test = ["isort", "flake8", "pillow", "matplotlib", "pytest"]
+docs = ["sphinx-rtd-theme", "sphinx", "docutils (<0.18)"]
+bokeh = ["selenium", "bokeh"]
+
+[[package]]
+name = "cycler"
+version = "0.11.0"
+description = "Composable style cycles"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[[package]]
 name = "flake8"
 version = "5.0.4"
 description = "the modular source code checker: pep8 pyflakes and co"
@@ -65,6 +149,73 @@ python-versions = ">=3.6.1"
 mccabe = ">=0.7.0,<0.8.0"
 pycodestyle = ">=2.9.0,<2.10.0"
 pyflakes = ">=2.5.0,<2.6.0"
+
+[[package]]
+name = "fonttools"
+version = "4.37.4"
+description = "Tools to manipulate font files"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+all = ["fs (>=2.2.0,<3)", "lxml (>=4.0,<5)", "zopfli (>=0.1.4)", "lz4 (>=1.7.4.2)", "matplotlib", "sympy", "skia-pathops (>=0.5.0)", "uharfbuzz (>=0.23.0)", "brotlicffi (>=0.8.0)", "scipy", "brotli (>=1.0.1)", "munkres", "unicodedata2 (>=14.0.0)", "xattr"]
+graphite = ["lz4 (>=1.7.4.2)"]
+interpolatable = ["scipy", "munkres"]
+lxml = ["lxml (>=4.0,<5)"]
+pathops = ["skia-pathops (>=0.5.0)"]
+plot = ["matplotlib"]
+repacker = ["uharfbuzz (>=0.23.0)"]
+symfont = ["sympy"]
+type1 = ["xattr"]
+ufo = ["fs (>=2.2.0,<3)"]
+unicode = ["unicodedata2 (>=14.0.0)"]
+woff = ["zopfli (>=0.1.4)", "brotlicffi (>=0.8.0)", "brotli (>=1.0.1)"]
+
+[[package]]
+name = "frozenlist"
+version = "1.3.1"
+description = "A list-like structure which implements collections.abc.MutableSequence"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
+name = "idna"
+version = "3.4"
+description = "Internationalized Domain Names in Applications (IDNA)"
+category = "dev"
+optional = false
+python-versions = ">=3.5"
+
+[[package]]
+name = "imageio"
+version = "2.22.1"
+description = "Library for reading and writing a wide range of image, video, scientific, and volumetric data formats."
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+numpy = "*"
+pillow = ">=8.3.2"
+
+[package.extras]
+all-plugins = ["astropy", "av", "imageio-ffmpeg", "opencv-python", "psutil", "tifffile"]
+all-plugins-pypy = ["av", "imageio-ffmpeg", "psutil", "tifffile"]
+build = ["wheel"]
+dev = ["invoke", "pytest", "pytest-cov", "fsspec", "black", "flake8"]
+docs = ["sphinx", "numpydoc", "pydata-sphinx-theme"]
+ffmpeg = ["imageio-ffmpeg", "psutil"]
+fits = ["astropy"]
+full = ["astropy", "av", "black", "flake8", "fsspec", "gdal", "imageio-ffmpeg", "invoke", "itk", "numpydoc", "opencv-python", "psutil", "pydata-sphinx-theme", "pytest", "pytest-cov", "sphinx", "tifffile", "wheel"]
+gdal = ["gdal"]
+itk = ["itk"]
+linting = ["black", "flake8"]
+opencv = ["opencv-python"]
+pyav = ["av"]
+test = ["invoke", "pytest", "pytest-cov", "fsspec"]
+tifffile = ["tifffile"]
 
 [[package]]
 name = "iniconfig"
@@ -89,6 +240,14 @@ colors = ["colorama (>=0.4.3,<0.5.0)"]
 plugins = ["setuptools"]
 
 [[package]]
+name = "kiwisolver"
+version = "1.4.4"
+description = "A fast implementation of the Cassowary constraint solver"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
 name = "loguru"
 version = "0.6.0"
 description = "Python logging made (stupidly) simple"
@@ -104,12 +263,40 @@ win32-setctime = {version = ">=1.0.0", markers = "sys_platform == \"win32\""}
 dev = ["sphinx-rtd-theme (>=0.4.3)", "sphinx-autobuild (>=0.7.1)", "Sphinx (>=4.1.1)", "isort (>=5.1.1)", "black (>=19.10b0)", "pytest-cov (>=2.7.1)", "pytest (>=4.6.2)", "tox (>=3.9.0)", "flake8 (>=3.7.7)", "docutils (==0.16)", "colorama (>=0.3.4)"]
 
 [[package]]
+name = "matplotlib"
+version = "3.6.1"
+description = "Python plotting package"
+category = "dev"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+contourpy = ">=1.0.1"
+cycler = ">=0.10"
+fonttools = ">=4.22.0"
+kiwisolver = ">=1.0.1"
+numpy = ">=1.19"
+packaging = ">=20.0"
+pillow = ">=6.2.0"
+pyparsing = ">=2.2.1"
+python-dateutil = ">=2.7"
+setuptools_scm = ">=7"
+
+[[package]]
 name = "mccabe"
 version = "0.7.0"
 description = "McCabe checker, plugin for flake8"
 category = "dev"
 optional = false
 python-versions = ">=3.6"
+
+[[package]]
+name = "multidict"
+version = "6.0.2"
+description = "multidict implementation"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
 
 [[package]]
 name = "mypy"
@@ -229,6 +416,18 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
+name = "pillow"
+version = "9.2.0"
+description = "Python Imaging Library (Fork)"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.extras]
+docs = ["furo", "olefile", "sphinx (>=2.4)", "sphinx-copybutton", "sphinx-issues (>=3.0.1)", "sphinx-removed-in", "sphinxext-opengraph"]
+tests = ["check-manifest", "coverage", "defusedxml", "markdown2", "olefile", "packaging", "pyroma", "pytest", "pytest-cov", "pytest-timeout"]
+
+[[package]]
 name = "platformdirs"
 version = "2.5.2"
 description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
@@ -308,15 +507,73 @@ tomli = ">=1.0.0"
 testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.7.2)", "requests", "xmlschema"]
 
 [[package]]
-name = "scipy"
-version = "1.9.1"
-description = "SciPy: Scientific Library for Python"
-category = "main"
-optional = true
-python-versions = ">=3.8,<3.12"
+name = "python-dateutil"
+version = "2.8.2"
+description = "Extensions to the standard Python datetime module"
+category = "dev"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
 
 [package.dependencies]
-numpy = ">=1.18.5,<1.25.0"
+six = ">=1.5"
+
+[[package]]
+name = "pyvista"
+version = "0.36.1"
+description = "Easier Pythonic interface to VTK"
+category = "dev"
+optional = false
+python-versions = ">=3.7.*"
+
+[package.dependencies]
+appdirs = "*"
+imageio = "*"
+numpy = "*"
+pillow = "*"
+scooby = ">=0.5.1"
+vtk = "*"
+
+[package.extras]
+all = ["matplotlib", "colorcet", "cmocean", "meshio (>=5.2)", "ipyvtklink", "pythreejs"]
+colormaps = ["matplotlib", "colorcet", "cmocean"]
+io = ["meshio (>=5.2)"]
+jupyter = ["ipyvtklink", "pythreejs"]
+
+[[package]]
+name = "scooby"
+version = "0.6.0"
+description = "A Great Dane turned Python environment detective"
+category = "dev"
+optional = false
+python-versions = ">=3.7.*"
+
+[package.extras]
+cpu = ["mkl", "psutil"]
+
+[[package]]
+name = "setuptools-scm"
+version = "7.0.5"
+description = "the blessed package to manage your versions by scm tags"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+packaging = ">=20.0"
+tomli = ">=1.0.0"
+typing-extensions = "*"
+
+[package.extras]
+test = ["pytest (>=6.2)", "virtualenv (>20)"]
+toml = ["setuptools (>=42)"]
+
+[[package]]
+name = "six"
+version = "1.16.0"
+description = "Python 2 and 3 compatibility utilities"
+category = "dev"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 
 [[package]]
 name = "tomli"
@@ -335,6 +592,21 @@ optional = false
 python-versions = ">=3.7"
 
 [[package]]
+name = "vtk"
+version = "9.2.2"
+description = "VTK is an open-source toolkit for 3D computer graphics, image processing, and visualization"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+matplotlib = ">=2.0.0"
+wslink = ">=1.0.4"
+
+[package.extras]
+numpy = ["numpy (>=1.9)"]
+
+[[package]]
 name = "win32-setctime"
 version = "1.1.0"
 description = "A small Python utility to set file creation time on Windows"
@@ -345,24 +617,64 @@ python-versions = ">=3.5"
 [package.extras]
 dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 
+[[package]]
+name = "wslink"
+version = "1.8.2"
+description = "Python/JavaScript library for communicating over WebSocket"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+aiohttp = "<4"
+
+[package.extras]
+ssl = ["cryptography"]
+
+[[package]]
+name = "yarl"
+version = "1.8.1"
+description = "Yet another URL library"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+idna = ">=2.0"
+multidict = ">=4.0"
+
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.9,<3.12"
-content-hash = "d70863dac511774033b887f6d6c879cf220ac0224e587e645ffcc07f9cb5bbb4"
+content-hash = "4f99806a2c2856e0d6ba4b555471c71efa2224ab3b7231a5c0299e94a073a037"
 
 [metadata.files]
+aiohttp = []
+aiosignal = []
+appdirs = []
+async-timeout = []
 attrs = []
 black = []
+charset-normalizer = []
 click = [
     {file = "click-8.1.3-py3-none-any.whl", hash = "sha256:bb4d8133cb15a609f44e8213d9b391b0809795062913b383c62be0ee95b1db48"},
     {file = "click-8.1.3.tar.gz", hash = "sha256:7682dc8afb30297001674575ea00d1814d808d6a36af415a82bd481d37ba7b8e"},
 ]
 colorama = []
+contourpy = []
+cycler = []
 flake8 = []
+fonttools = []
+frozenlist = []
+idna = []
+imageio = []
 iniconfig = []
 isort = []
+kiwisolver = []
 loguru = []
+matplotlib = []
 mccabe = []
+multidict = []
 mypy = []
 mypy-extensions = [
     {file = "mypy_extensions-0.4.3-py2.py3-none-any.whl", hash = "sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d"},
@@ -376,6 +688,7 @@ panda3d-blend2bam = []
 panda3d-gltf = []
 panda3d-simplepbr = []
 pathspec = []
+pillow = []
 platformdirs = [
     {file = "platformdirs-2.5.2-py3-none-any.whl", hash = "sha256:027d8e83a2d7de06bbac4e5ef7e023c02b863d7ea5d079477e722bb41ab25788"},
     {file = "platformdirs-2.5.2.tar.gz", hash = "sha256:58c8abb07dcb441e6ee4b11d8df0ac856038f944ab98b7be6b27b2a3c7feef19"},
@@ -386,10 +699,17 @@ pycodestyle = []
 pyflakes = []
 pyparsing = []
 pytest = []
-scipy = []
+python-dateutil = []
+pyvista = []
+scooby = []
+setuptools-scm = []
+six = []
 tomli = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
     {file = "tomli-2.0.1.tar.gz", hash = "sha256:de526c12914f0c550d15924c62d72abc48d6fe7364aa87328337a31007fe8a4f"},
 ]
 typing-extensions = []
+vtk = []
 win32-setctime = []
+wslink = []
+yarl = []
