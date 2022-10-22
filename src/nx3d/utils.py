@@ -1,6 +1,8 @@
 from itertools import chain, repeat
 from math import sqrt
 
+import networkx as nx
+import numpy as np
 from networkx import Graph
 from panda3d.core import Material, NodePath, Vec4
 
@@ -10,7 +12,10 @@ def set_color(ob: NodePath, color: Vec4):
     # growth due to adding and adding mats w.o update.
     mat = Material()
     mat.setShininess(5.0)
-    mat.setBaseColor(color)
+    try:
+        mat.setBaseColor(color)
+    except TypeError as e:
+        raise TypeError("try tuple(color)") from e
     ob.setMaterial(mat, 1)
 
 

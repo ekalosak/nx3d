@@ -5,6 +5,7 @@ import os
 import sys
 from dataclasses import dataclass
 from math import cos, isclose, pi, sin, sqrt, tan
+from numbers import Number
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
 
@@ -177,11 +178,10 @@ class Nx3D(ShowBase):
     ):
         ShowBase.__init__(self, **kwargs)
         logger.info(graph)
-        self.g = graph
         self.time_elapsed = 0.0
         self._latest_key = None
-        if nolabels:
-            self.g.graph["show_labels"] = False
+        self.g = graph
+        self.g.graph["show_labels"] = not nolabels
 
         if self.win:
             properties = WindowProperties()
@@ -576,7 +576,11 @@ class Nx3D(ShowBase):
         for elm in utils.all_elements(self.g):
             assert all(isinstance(x, NodePath) for x in (elm["model"], elm["text_np"]))
             assert isinstance(elm["text_tn"], TextNode)
-            assert all(isinstance(c, (float, int)) for c in elm["color"])
+            if not all(isinstance(c, Number) for c in elm["color"]):
+                types = [type(c) for c in elm["color"]]
+                raise TypeError(
+                    f'found colors {types}={elm["color"]}, must be all Number'
+                )
             assert len(elm["color"]) == 4
             assert isinstance(elm["label"], str)
             utils.set_color(elm["model"], elm["color"])
@@ -618,6 +622,8 @@ class Nx3D(ShowBase):
     def keyboardCameraTask(self, task):
         """handle keyboard input that spins the camera"""
         # first adjust camera speed
+        if not self.win:
+            return Task.done
         left_button = KeyboardButton.ascii_key("a")
         right_button = KeyboardButton.ascii_key("d")
         up_button = KeyboardButton.ascii_key("w")
