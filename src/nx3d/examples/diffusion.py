@@ -14,23 +14,31 @@ DIFFUSION_STEP_PER_SEC = 10
 EPS = 0.2  # when all diffusions steps are under EPS, reset
 
 
-def _init_diff_graph(g):
+def _init_diff_graph(g, color_init="uniform"):
     """init color and label render attributes"""
+    allowed_color_init = ["uniform", "equitable"]
+    if color_init not in allowed_color_init:
+        raise ValueError(
+            f"color_init={color_init} not allowed, must be one of {allowed_color_init}"
+        )
+    if color_init == "equitable":
+        ncolor = int(log(len(g))) + 3
+        rainbows = mpl.colormaps["rainbow"].resampled(ncolor)
+        color_index = nx.equitable_color(g, num_colors=ncolor)
     g.graph["nstep"] = 0
     if "show_labels" not in g.graph:
         g.graph["show_labels"] = True
-    ncolor = int(log(len(g))) + 3
-    rainbows = mpl.colormaps["rainbow"].resampled(ncolor)
-    color_index = nx.equitable_color(g, num_colors=ncolor)
     for n, nd in g.nodes(data=True):
-        nd["color"] = rainbows(color_index[n])
+        if color_init == "equitable":
+            nd["color"] = rainbows(color_index[n])
+        elif color_init == "uniform":
+            nd["color"] = tuple([random.random(), random.random(), random.random(), 1])
         nd["label"] = ""
     for u, v, ed in g.edges(data=True):
         col0 = np.array(g.nodes[u]["color"])
         col1 = np.array(g.nodes[v]["color"])
         color = (col0 + col1) / 2
-        print(color)
-        print(type(color))
+        logger.trace(f"color {type(color)} {color}")
         ed["color"] = tuple(color)
         ed["label"] = ""
     logger.info(f"{len(g)} nodes")
