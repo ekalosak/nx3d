@@ -8,7 +8,7 @@
 [![-missing project maturity-](https://img.shields.io/badge/status-experimental-green)](https://nx3d.readthedocs.io/en/latest/maturity.html)
 [![-missing download count-](https://img.shields.io/pypi/dw/nx3d)](https://pypistats.org/packages/nx3d)
 
-The missing link between `panda3d` and `networkx`.
+A 3D plotting library for `networkx` built on `panda3d`.
 
 ![-missing gif of frucht graph-](https://raw.githubusercontent.com/ekalosak/nx3d/cf473d1dfab506ecd4044f4693c09aea0e1153ba/data/frucht.gif)
 
