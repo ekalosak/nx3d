@@ -35,17 +35,8 @@ from nx3d.types import Pos3
 from nx3d.utils import get_pos_scale
 
 DO_LS = False
-logger.remove()
 if os.environ.get("TRACE"):
-    logger.add(sys.stderr, level="TRACE")
     DO_LS = True
-elif os.environ.get("DEBUG"):
-    logger.add(sys.stderr, level="DEBUG")
-elif os.environ.get("INFO"):
-    logger.add(sys.stderr, level="INFO")
-else:
-    logger.add(sys.stderr, level="WARNING")
-
 
 loadPrcFileData("", "background-color .03")
 
@@ -359,6 +350,10 @@ class Nx3D(ShowBase):
                 u, v = e
             pu = graph.nodes[u]["pos"]
             pv = graph.nodes[v]["pos"]
+            if not isinstance(pu, np.ndarray):
+                raise TypeError(
+                    f"positions must be np.ndarray, got {type(pu)} for node {u}"
+                )
             if all(pu == pv):
                 logger.warning(f"nodes {(u, v)} share position")
                 pu = graph.nodes[u]["pos"] = pu + EPS * (1 - np.random.random())
@@ -495,7 +490,7 @@ class Nx3D(ShowBase):
         mod0.reparentTo(mod)
         mod.setScale(scale)
         if color:
-            print(f"color={color}")
+            logger.debug(f"color={color}")
             utils.set_color(mod, color)
         return mod
 

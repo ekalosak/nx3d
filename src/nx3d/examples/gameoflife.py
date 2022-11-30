@@ -56,12 +56,14 @@ def _clear_board(g):
 
 def _reset_board(g, n_live: Optional[int] = None):
     _clear_board(g)
+    g.graph["reset"] = True
     if n_live is None:
         n_live = len(g) // 2
     elif n_live <= 0:
         return
     for n in random.sample(g.nodes, k=n_live):
         g.nodes[n]["val"] = 1
+    _update_colors(g)
 
 
 def _do_life(g: nx.Graph, di, dt):
@@ -69,6 +71,7 @@ def _do_life(g: nx.Graph, di, dt):
         logger.success("dead board, resetting")
         _reset_board(g)
     else:
+        g.graph["reset"] = False
         for n in g:
             g.nodes[n]["last_val"] = g.nodes[n]["val"]
         vals = {}
