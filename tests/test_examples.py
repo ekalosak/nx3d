@@ -16,7 +16,6 @@ def gg(g):
 def test_gol_graph():
     dim = (3, 3, 3)
     g = gameoflife.grid_gol_graph(dim)
-    gameoflife._init_pos(g)
     assert (1, 3, 0) not in g
     assert (0, 0, 0) in g[(1, 1, 1)]
 
