@@ -7,7 +7,7 @@ nx3d = "nx3d.__main__:main"
 
 [tool.poetry]
 name = "nx3d"
-version = "22.10.4"
+version = "22.11.0"
 description = "Nx3D is a 3D plotting library for graphs (vertices and edges)"
 authors = ["Eric Kalosa-Kenyon <helloateric@gmail.com>"]
 readme = "README.md"
@@ -34,7 +34,6 @@ black = "^22.8.0"
 isort = "^5.10.1"
 flake8 = "^5.0.4"
 mypy = "^0.971"
-panda3d-blend2bam = "^0.20"
 
 [tool.mypy]
 exclude = ['docs/']
