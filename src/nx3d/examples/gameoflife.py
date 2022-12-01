@@ -12,11 +12,9 @@ import random
 from typing import Optional
 
 import networkx as nx
-import numpy as np
 from loguru import logger
 
 from nx3d.core import Nx3D
-from nx3d.utils import get_pos_scale
 
 COLOR_DEAD = (0.2, 0.2, 0.2, 1)
 COLOR_LIVE = (0.8, 0.8, 0.8, 1)
@@ -54,32 +52,16 @@ def _clear_board(g):
         g.nodes[n]["last_val"] = 0
 
 
-def _init_pos(g):
-    scale = get_pos_scale(g)
-    pos = nx.spring_layout(g, dim=3, scale=scale)
-    for n, nd in g.nodes(data=True):
-        if "pos" in nd:
-            continue
-        elif isinstance(n, tuple):
-            if len(n) == 1:
-                nd["pos"] = np.array([n[0], 0, 0])
-            elif len(n) == 2:
-                nd["pos"] = np.array([n[0], n[1], 0])
-            else:
-                nd["pos"] = np.array(n[:3])
-        else:
-            nd["pos"] = pos[n]
-
-
 def _reset_board(g, n_live: Optional[int] = None):
-    _init_pos(g)
     _clear_board(g)
+    g.graph["reset"] = True
     if n_live is None:
         n_live = len(g) // 2
     elif n_live <= 0:
         return
     for n in random.sample(g.nodes, k=n_live):
         g.nodes[n]["val"] = 1
+    _update_colors(g)
 
 
 def _do_life(g: nx.Graph, di, dt):
@@ -87,6 +69,7 @@ def _do_life(g: nx.Graph, di, dt):
         logger.success("dead board, resetting")
         _reset_board(g)
     else:
+        g.graph["reset"] = False
         for n in g:
             g.nodes[n]["last_val"] = g.nodes[n]["val"]
         vals = {}

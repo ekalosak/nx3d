@@ -18,7 +18,6 @@ Alternatives
 
 There are several alternative 3D plotting tools for networkx graphs.
 You may find your solution among these.
-They are better suited to plotting scientific data in the main.
 
 
 Using matplotlib

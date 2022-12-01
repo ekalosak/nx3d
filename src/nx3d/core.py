@@ -2,10 +2,9 @@
 """
 
 import os
-import sys
 from dataclasses import dataclass
 from math import cos, isclose, pi, sin, sqrt, tan
-from pathlib import Path
+from numbers import Number
 from typing import Any, Callable, Optional, Union
 
 import networkx as nx
@@ -29,32 +28,15 @@ from panda3d.core import (
     loadPrcFileData,
 )
 
-from nx3d import utils
+from nx3d import mesh, utils
 from nx3d.types import Pos3
 from nx3d.utils import get_pos_scale
 
 DO_LS = False
-logger.remove()
 if os.environ.get("TRACE"):
-    logger.add(sys.stderr, level="TRACE")
     DO_LS = True
-elif os.environ.get("DEBUG"):
-    logger.add(sys.stderr, level="DEBUG")
-elif os.environ.get("INFO"):
-    logger.add(sys.stderr, level="INFO")
-else:
-    logger.add(sys.stderr, level="WARNING")
-
 
 loadPrcFileData("", "background-color .03")
-
-FILES = {
-    "node": Path(__file__).parent / "data/icosphere.bam",
-    "edge": Path(__file__).parent / "data/undirected_edge_3.bam",
-    "edge_directed": Path(__file__).parent / "data/bent_directed_edge_3.bam",
-    "edge_bent": Path(__file__).parent / "data/bent_undirected_edge_3.bam",
-    "edge_directed_bent": Path(__file__).parent / "data/bent_directed_edge_3.bam",
-}
 
 KEYBOARD_CONTROLLS = """
 wasd - move camera around
@@ -165,6 +147,7 @@ class Nx3D(ShowBase):
         state_trans_func: Optional[Callable[[nx.Graph, int, float], Any]] = None,
         nofilter=False,
         nogui=False,
+        nolabels=False,
         plot_axes=False,
         autolabel=False,
         autolabel_nodes=False,
@@ -176,9 +159,10 @@ class Nx3D(ShowBase):
     ):
         ShowBase.__init__(self, **kwargs)
         logger.info(graph)
-        self.g = graph
         self.time_elapsed = 0.0
         self._latest_key = None
+        self.g = graph
+        self.g.graph["show_labels"] = not nolabels
 
         if self.win:
             properties = WindowProperties()
@@ -187,7 +171,6 @@ class Nx3D(ShowBase):
             properties.setOrigin(0, 0)
             self.win.requestProperties(properties)
 
-        self._init_filepaths()
         if autolabel:
             autolabel_nodes = autolabel_edges = True
         self._init_positions(pos)
@@ -210,8 +193,6 @@ class Nx3D(ShowBase):
         if not nogui:
             self._init_gui(mouse)
         self._init_keyboard_input()
-        if plot_axes:
-            self._init_axes(FILES["edge"])
         if not mouse:
             self._init_keyboard_camera()
         self._init_state_update_task(state_trans_delay, state_trans_func)
@@ -326,9 +307,7 @@ class Nx3D(ShowBase):
         for i, (n, nd) in enumerate(graph.nodes(data=True)):
             pid = f"node_{i}"
             try:
-                node: NodePath = self._init_panda3d_model(
-                    pid, self.node_fp, self.node_lights
-                )
+                node: NodePath = self._init_panda3d_model(pid, "node", self.node_lights)
             except AttributeError:
                 logger.error("call _init_lights before _init_models")
                 raise
@@ -356,14 +335,16 @@ class Nx3D(ShowBase):
                 u, v = e
             pu = graph.nodes[u]["pos"]
             pv = graph.nodes[v]["pos"]
+            if not isinstance(pu, np.ndarray):
+                raise TypeError(
+                    f"positions must be np.ndarray, got {type(pu)} for node {u}"
+                )
             if all(pu == pv):
                 logger.warning(f"nodes {(u, v)} share position")
                 pu = graph.nodes[u]["pos"] = pu + EPS * (1 - np.random.random())
             dist = linalg.norm(pu - pv)
             pid = f"edge_{i}"
-            edge: NodePath = self._init_panda3d_model(
-                pid, self.edge_fp, self.edge_lights
-            )
+            edge: NodePath = self._init_panda3d_model(pid, "edge", self.edge_lights)
             edge.reparentTo(self.render)
             tpid = f"edge_{i}_text"
             text, text_ = self._init_panda3d_text(
@@ -377,7 +358,7 @@ class Nx3D(ShowBase):
             # rotate into place
             text.setPos(tuple((pu + pv) / 2.0))
             edge.setPos(*pu)
-            edge.setScale(1, 1, dist / 2)  # models have Z size of 2
+            edge.setScale(1, 1, dist)
             d = np.array(pv - pu, dtype=float)
             for ix in np.argwhere(d == 0):
                 d[ix] = EPS
@@ -424,20 +405,6 @@ class Nx3D(ShowBase):
             edge_labels = {ed: str(ed) for ed in self.g.edges}
         return node_labels, edge_labels
 
-    def _init_filepaths(self):
-        logger.info("")
-        self.node_fp = FILES.get("node")
-        if isinstance(self.g, nx.MultiDiGraph):
-            self.edge_fp = FILES.get("edge_directed_bent")
-        elif isinstance(self.g, nx.MultiGraph):
-            self.edge_fp = FILES.get("edge_bent")
-        elif isinstance(self.g, nx.DiGraph):
-            self.edge_fp = FILES.get("edge_directed")
-        else:
-            self.edge_fp = FILES.get("edge")
-        if self.edge_fp is None or self.node_fp is None:
-            raise NotImplementedError
-
     def _init_keyboard_input(self):
         """register event handler for keyboard presses, update self._latest_key with keyboard input when called
         https://docs.panda3d.org/1.10/python/programming/hardware-support/keyboard-support#keystroke-events
@@ -476,13 +443,30 @@ class Nx3D(ShowBase):
     def _init_panda3d_model(
         self,
         pid: str,
-        egg_filepath: Path,
+        meshtype: str,
         lights=[],
         scale: Union[float, Vec3] = 1.0,
         color: Optional[Vec4] = None,
-    ):
-        logger.info(f"loading model: {egg_filepath}")
-        mod0 = self.loader.loadModel(egg_filepath)
+    ) -> NodePath:
+        """Make a mesh and wrap it in a Panda3D object.
+        Args:
+            - pid: unique id for the NodePath
+            - meshtype: can be 'edge' or 'node'
+        """
+        try:
+            self.node_mesh_prototype
+        except AttributeError:
+            self.node_mesh_prototype = mesh.make_node(scale=3.0, marker=4)
+            self.edge_mesh_prototype = mesh.make_edge()
+        if meshtype == "node":
+            gn = mesh.pv_to_p3(self.node_mesh_prototype)
+        elif meshtype == "edge":
+            gn = mesh.pv_to_p3(self.edge_mesh_prototype)
+        else:
+            raise ValueError(
+                'meshtype {meshtype} not supported; must be "edge" or "node"'
+            )
+        mod0: NodePath = self.render.attachNewNode(gn)
         if DO_LS:
             mod0.ls()
         mod0.setLightOff()
@@ -492,7 +476,7 @@ class Nx3D(ShowBase):
         mod0.reparentTo(mod)
         mod.setScale(scale)
         if color:
-            print(f"color={color}")
+            logger.debug(f"color={color}")
             utils.set_color(mod, color)
         return mod
 
@@ -530,18 +514,18 @@ class Nx3D(ShowBase):
 
     def _init_axes(self, fn):
         """put 3 cylinders in r:x:small, g:y:med, b:z:big; for debugging"""
-        self.zax = self.loader.loadModel(fn)
+        self.zax = mesh.pv_to_p3(self.edge_mesh_prototype)
         self.zax.reparentTo(self.render)
         self.zax.setColor(*(0, 0, 1, 1))
         self.zax.setScale(1)
         self.zax.setPos(0, 0, 0)
-        self.xax = self.loader.loadModel(fn)
+        self.xax = mesh.pv_to_p3(self.edge_mesh_prototype)
         self.xax.reparentTo(self.render)
         self.xax.setColor(*(1, 0, 0, 1))
         self.xax.setScale(0.8, 0.8, 1)
         self.xax.setPos(0, 0, 0)
         self.xax.setR(90)
-        self.yax = self.loader.loadModel(fn)
+        self.yax = mesh.pv_to_p3(self.edge_mesh_prototype)
         self.yax.reparentTo(self.render)
         self.yax.setColor(*(0, 1, 0, 1))
         self.yax.setScale(0.9, 0.9, 1)
@@ -573,7 +557,11 @@ class Nx3D(ShowBase):
         for elm in utils.all_elements(self.g):
             assert all(isinstance(x, NodePath) for x in (elm["model"], elm["text_np"]))
             assert isinstance(elm["text_tn"], TextNode)
-            assert all(isinstance(c, (float, int)) for c in elm["color"])
+            if not all(isinstance(c, Number) for c in elm["color"]):
+                types = [type(c) for c in elm["color"]]
+                raise TypeError(
+                    f'found colors {types}={elm["color"]}, must be all Number'
+                )
             assert len(elm["color"]) == 4
             assert isinstance(elm["label"], str)
             utils.set_color(elm["model"], elm["color"])
@@ -584,26 +572,9 @@ class Nx3D(ShowBase):
         """write diagnostic info to gui"""
         if self.camera is None:
             return
-        rot = "camera rotation: "
-        pos = "camera position: "
         tim = "time: "
-        rot_ = rot + str(self.camera.getHpr())
-        pos_ = pos + str(self.camera.getPos())
         self.time_elapsed += task.time
         tim_ = tim + f"{self.time_elapsed:.0f}sec"
-        # FIXME init rot and pos in _init_gui
-        if rot not in self.gui_updatable_lines:
-            self.gui_updatable_lines[rot] = self._make_gui_text(
-                rot_, len(self.gui_fixed_lines), 0.07
-            )
-        else:
-            self.gui_updatable_lines[rot].setText(rot_)
-        if pos not in self.gui_updatable_lines:
-            self.gui_updatable_lines[pos] = self._make_gui_text(
-                pos_, len(self.gui_fixed_lines) + 1, 0.07
-            )
-        else:
-            self.gui_updatable_lines[pos].setText(pos_)
         if tim not in self.gui_updatable_lines:
             self.gui_updatable_lines[tim] = self._make_gui_text(
                 tim_, len(self.gui_fixed_lines) + 2, 0.07
@@ -615,6 +586,8 @@ class Nx3D(ShowBase):
     def keyboardCameraTask(self, task):
         """handle keyboard input that spins the camera"""
         # first adjust camera speed
+        if not self.win:
+            return Task.done
         left_button = KeyboardButton.ascii_key("a")
         right_button = KeyboardButton.ascii_key("d")
         up_button = KeyboardButton.ascii_key("w")
@@ -675,3 +648,20 @@ class Nx3D(ShowBase):
         k = self._latest_key
         self._latest_key = None
         return k
+
+    def to_rgb_array(self):
+        """
+        https://github.com/ikalevatykh/panda3d_viewer/blob/master/panda3d_viewer/viewer_app.py
+        """
+        requested_format = "RGB"
+        if not self.win:
+            return
+        texture = self.win.get_screenshot()
+        if texture is None:
+            return None
+        xsize = texture.get_x_size()
+        ysize = texture.get_y_size()
+        dsize = len(requested_format)
+        image = texture.get_ram_image_as(requested_format)
+        array = np.asarray(image).reshape((ysize, xsize, dsize))
+        return np.flipud(array)
