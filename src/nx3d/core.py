@@ -358,7 +358,7 @@ class Nx3D(ShowBase):
             # rotate into place
             text.setPos(tuple((pu + pv) / 2.0))
             edge.setPos(*pu)
-            edge.setScale(1, 1, dist / 2)  # models have Z size of 2
+            edge.setScale(1, 1, dist)
             d = np.array(pv - pu, dtype=float)
             for ix in np.argwhere(d == 0):
                 d[ix] = EPS
@@ -456,7 +456,7 @@ class Nx3D(ShowBase):
         try:
             self.node_mesh_prototype
         except AttributeError:
-            self.node_mesh_prototype = mesh.make_node()
+            self.node_mesh_prototype = mesh.make_node(scale=3.0, marker=4)
             self.edge_mesh_prototype = mesh.make_edge()
         if meshtype == "node":
             gn = mesh.pv_to_p3(self.node_mesh_prototype)
@@ -572,26 +572,9 @@ class Nx3D(ShowBase):
         """write diagnostic info to gui"""
         if self.camera is None:
             return
-        rot = "camera rotation: "
-        pos = "camera position: "
         tim = "time: "
-        rot_ = rot + str(self.camera.getHpr())
-        pos_ = pos + str(self.camera.getPos())
         self.time_elapsed += task.time
         tim_ = tim + f"{self.time_elapsed:.0f}sec"
-        # FIXME init rot and pos in _init_gui
-        if rot not in self.gui_updatable_lines:
-            self.gui_updatable_lines[rot] = self._make_gui_text(
-                rot_, len(self.gui_fixed_lines), 0.07
-            )
-        else:
-            self.gui_updatable_lines[rot].setText(rot_)
-        if pos not in self.gui_updatable_lines:
-            self.gui_updatable_lines[pos] = self._make_gui_text(
-                pos_, len(self.gui_fixed_lines) + 1, 0.07
-            )
-        else:
-            self.gui_updatable_lines[pos].setText(pos_)
         if tim not in self.gui_updatable_lines:
             self.gui_updatable_lines[tim] = self._make_gui_text(
                 tim_, len(self.gui_fixed_lines) + 2, 0.07

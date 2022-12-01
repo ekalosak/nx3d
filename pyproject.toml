@@ -8,7 +8,7 @@ nx3d = "nx3d.__main__:main"
 [tool.poetry]
 name = "nx3d"
 version = "22.10.4"
-description = "The missing link between panda3d and networkx."
+description = "Nx3D is a 3D plotting library for graphs (vertices and edges)"
 authors = ["Eric Kalosa-Kenyon <helloateric@gmail.com>"]
 readme = "README.md"
 license = "MIT"
@@ -25,6 +25,7 @@ networkx = "^2.8"
 Panda3D = "^1.10"
 numpy = "^1.23"
 loguru = "^0.6.0"
+pyvista = "^0.36.1"
 matplotlib = "^3.6.1"
 
 [tool.poetry.dev-dependencies]
@@ -34,7 +35,6 @@ isort = "^5.10.1"
 flake8 = "^5.0.4"
 mypy = "^0.971"
 panda3d-blend2bam = "^0.20"
-pyvista = "^0.36.1"
 
 [tool.mypy]
 exclude = ['docs/']

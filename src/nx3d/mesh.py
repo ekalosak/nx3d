@@ -51,6 +51,7 @@ def pv_to_p3(mesh: pv.PolyData) -> GeomNode:
         vertexw.addData3(*vertex)
         normalw.addData3(0, 0, 1)
         colorw.addData4(0, 0, 1, 1)
+    geom = Geom(vdata)
     prim_ix = 0
     while prim_ix < len(mesh.faces):
         stride = mesh.faces[prim_ix]
@@ -64,8 +65,7 @@ def pv_to_p3(mesh: pv.PolyData) -> GeomNode:
             prim = triangle(face)
         else:
             prim = polygon(face)
-    geom = Geom(vdata)
-    geom.addPrimitive(prim)
+        geom.addPrimitive(prim)
     node = GeomNode("gnode")
     node.addGeom(geom)
     return node
@@ -79,12 +79,20 @@ def make_node(scale=1, marker=0) -> pv.PolyData:
     return PlatonicSolid(marker, radius=scale / 2, center=[0, 0, 0])
 
 
-def make_edge(kind="undirected", scale=1, theta=None, bend=None) -> pv.PolyData:
-    kwargs = dict(height=scale, radius=scale, resolution=9)
+def make_edge(
+    kind="undirected", height=1, radius=0.4, nsides=9, theta=None, bend=None
+) -> pv.PolyData:
+    kwargs = dict(
+        center=[0, 0, height / 2],
+        direction=[0, 0, 1],
+        height=height,
+        radius=radius,
+        resolution=nsides,
+    )
     if kind == "undirected":
-        ms = Cylinder([0, 0, 0], **kwargs)
+        ms = Cylinder(**kwargs)
     elif kind == "directed":
-        ms = Arrow([0, 0, 0], **kwargs)
+        ms = Arrow(**kwargs)
     else:
         raise ValueError(
             f'unsupported edge kind {kind}; must be "directed" or "undirected"'
