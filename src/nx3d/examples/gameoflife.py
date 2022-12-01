@@ -12,11 +12,9 @@ import random
 from typing import Optional
 
 import networkx as nx
-import numpy as np
 from loguru import logger
 
 from nx3d.core import Nx3D
-from nx3d.utils import get_pos_scale
 
 COLOR_DEAD = (0.2, 0.2, 0.2, 1)
 COLOR_LIVE = (0.8, 0.8, 0.8, 1)
