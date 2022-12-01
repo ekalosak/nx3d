@@ -1,3 +1,4 @@
+""" This module provides procedural mesh generation """
 import numpy as np
 import pyvista as pv
 from panda3d.core import (

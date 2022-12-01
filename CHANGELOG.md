@@ -1,8 +1,10 @@
 # Wed Nov 30 2022
 22.11.0
-- procedural mesh generation
+- added procedural mesh generation
 - broke multigraph plotting (cylinders don't bend yet)
 - broke digraph plotting (arrowheads are too small)
+- labels still buggy
+- broke debugging axes plotting
 
 # Sun Oct 2 2022
 22.10.4

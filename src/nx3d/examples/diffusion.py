@@ -2,7 +2,10 @@
 import random
 from math import log
 
-import matplotlib as mpl
+try:
+    import matplotlib as mpl
+except ImportError:
+    pass
 import networkx as nx
 import numpy as np
 from loguru import logger
@@ -22,9 +25,17 @@ def _init_diff_graph(g, color_init="uniform"):
             f"color_init={color_init} not allowed, must be one of {allowed_color_init}"
         )
     if color_init == "equitable":
-        ncolor = int(log(len(g))) + 3
-        rainbows = mpl.colormaps["rainbow"].resampled(ncolor)
-        color_index = nx.equitable_color(g, num_colors=ncolor)
+        try:
+            mpl
+        except NameError:
+            logger.warning(
+                f'color_init={color_init} requires matplotlib; using "uniform" instead (which does not)'
+            )
+            color_init = "uniform"
+        else:
+            ncolor = int(log(len(g))) + 3
+            rainbows = mpl.colormaps["rainbow"].resampled(ncolor)
+            color_index = nx.equitable_color(g, num_colors=ncolor)
     g.graph["nstep"] = 0
     if "show_labels" not in g.graph:
         g.graph["show_labels"] = True
