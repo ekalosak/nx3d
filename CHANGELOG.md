@@ -1,3 +1,9 @@
+# Wed Nov 30 2022
+22.11.0
+- procedural mesh generation
+- broke multigraph plotting (cylinders don't bend yet)
+- broke digraph plotting (arrowheads are too small)
+
 # Sun Oct 2 2022
 22.10.4
 - game of life on a graph
