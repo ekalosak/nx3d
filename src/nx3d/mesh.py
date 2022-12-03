@@ -82,17 +82,6 @@ def make_node(radius=0.5, marker=0) -> pv.PolyData:
     return PlatonicSolid(marker, radius=radius, center=[0, 0, 0])
 
 
-def faces(ms):
-    ix = 0
-    faces = []
-    while ix < len(ms.faces):
-        stride = ms.faces[ix]
-        face = ms.faces[ix + 1 : ix + 1 + stride]
-        faces.append(face)
-        ix += 1 + stride
-    return faces
-
-
 def bent_cylinder(nsegments=8, nsides=8, radius=0.08, with_arc=False):
     ca = CircularArc([0, 0, 0], [0, 0, 1], [0, 0, 0.5], resolution=nsegments)
     try:
@@ -138,9 +127,11 @@ def make_edge(kind="g", nsegments=8, nsides=8, radius=0.4) -> pv.PolyData:
         )
         # ms = bent_cylinder(1, nsides, radius)
     elif "d" in kind:
-        ms = bent_arrow(nsegments, nsides, radius, 1.9)
+        ms = bent_arrow(nsegments, nsides, radius, tip_length=0.02)
     else:
         ms = bent_cylinder(nsegments, nsides, radius)
+        print("bent_cylinder")
+        print(ms)
     assert ms is not None
     return ms
 

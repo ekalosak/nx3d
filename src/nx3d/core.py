@@ -164,14 +164,19 @@ class Nx3D(ShowBase):
         self.g = graph
         self.g.graph["show_labels"] = not nolabels
         self.node_mesh_prototype = mesh.make_node(radius=1.5, marker=4)
+        kw = dict(
+            nsegments=4,
+            nsides=3,
+            radius=0.2,
+        )
         if isinstance(graph, nx.MultiDiGraph):
-            self.edge_mesh_prototype = mesh.make_edge("md")
+            self.edge_mesh_prototype = mesh.make_edge("md", **kw)
         elif isinstance(graph, nx.DiGraph):
-            self.edge_mesh_prototype = mesh.make_edge("d")
+            self.edge_mesh_prototype = mesh.make_edge("d", **kw)
         elif isinstance(graph, nx.MultiGraph):
-            self.edge_mesh_prototype = mesh.make_edge("m")
+            self.edge_mesh_prototype = mesh.make_edge("m", **kw)
         elif isinstance(graph, nx.Graph):
-            self.edge_mesh_prototype = mesh.make_edge()
+            self.edge_mesh_prototype = mesh.make_edge("g", **kw)
         else:
             raise TypeError(
                 f"graph of type={type(graph)} not supported, must be subclass of nx.Graph"
@@ -323,6 +328,7 @@ class Nx3D(ShowBase):
             node.reparentTo(self.render)
             utils.set_color(node, nd["color"])
             node.setPos(*nd["pos"])
+            node.setScale(0.2)
             node.setScale(nd["size"])
             tpid = f"node_{i}_text"
             text, text_ = self._init_panda3d_text(tpid, nd["label"], nd["label_color"])
@@ -352,12 +358,12 @@ class Nx3D(ShowBase):
                 logger.warning(f"nodes {(u, v)} share position")
                 pu = graph.nodes[u]["pos"] = pu + EPS * (1 - np.random.random())
             dist = linalg.norm(pu - pv)
-            pid = f"edge_{i}"
-            edge: NodePath = self._init_panda3d_model(pid, "edge", self.edge_lights)
+            edge: NodePath = self._init_panda3d_model(
+                f"edge_{i}", "edge", self.edge_lights
+            )
             edge.reparentTo(self.render)
-            tpid = f"edge_{i}_text"
             text, text_ = self._init_panda3d_text(
-                tpid, graph.edges[e]["label"], graph.edges[e]["label_color"]
+                f"edge_{i}_text", graph.edges[e]["label"], graph.edges[e]["label_color"]
             )
             text.reparentTo(self.render)
             graph.edges[e]["model"] = edge
@@ -367,7 +373,7 @@ class Nx3D(ShowBase):
             # rotate into place
             text.setPos(tuple((pu + pv) / 2.0))
             edge.setPos(*pu)
-            edge.setScale(1, 1, dist)
+            edge.setScale(1, 1, dist * 0.6)
             d = np.array(pv - pu, dtype=float)
             for ix in np.argwhere(d == 0):
                 d[ix] = EPS
