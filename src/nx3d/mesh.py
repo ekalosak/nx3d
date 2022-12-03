@@ -72,30 +72,36 @@ def pv_to_p3(mesh: pv.PolyData) -> GeomNode:
     return node
 
 
-def make_node(scale=1, marker=0) -> pv.PolyData:
-    """create a unit scale mesh representing a node
-    Args:
-        - scale: radius of solid's bounding sphere
-    """
-    return PlatonicSolid(marker, radius=scale / 2, center=[0, 0, 0])
+def make_node(radius=0.5, marker=0) -> pv.PolyData:
+    return PlatonicSolid(marker, radius=radius, center=[0, 0, 0])
 
 
-def make_edge(
-    kind="undirected", height=1, radius=0.4, nsides=9, theta=None, bend=None
-) -> pv.PolyData:
-    kwargs = dict(
-        center=[0, 0, height / 2],
-        direction=[0, 0, 1],
-        height=height,
-        radius=radius,
-        resolution=nsides,
-    )
-    if kind == "undirected":
-        ms = Cylinder(**kwargs)
-    elif kind == "directed":
-        ms = Arrow(**kwargs)
-    else:
-        raise ValueError(
-            f'unsupported edge kind {kind}; must be "directed" or "undirected"'
+def bend(ms: pv.PolyData, degrees: float) -> pv.PolyData:
+    return ms
+
+
+def make_edge(kind="g", height=1, radius=0.4, nsides=9) -> pv.PolyData:
+    allowedkinds = ["g", "m", "d", "md"]
+    if kind not in allowedkinds:
+        raise ValueError(f"unsupported edge kind {kind}; must be one of {allowedkinds}")
+    if "d" in kind:
+        ms = Arrow(
+            direction=[0, 0, 1],
+            tip_length=0.4,
+            tip_radius=radius * 2,
+            tip_resolution=nsides,
+            shaft_radius=radius,
+            shaft_resolution=nsides,
+            scale=height,
         )
+    else:
+        ms = Cylinder(
+            center=[0, 0, height / 2],
+            direction=[0, 0, 1],
+            height=height,
+            radius=radius,
+            resolution=nsides,
+        )
+    if kind != "g":
+        ms = bend(ms, 30.0)
     return ms

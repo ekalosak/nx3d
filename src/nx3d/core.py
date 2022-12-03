@@ -163,6 +163,19 @@ class Nx3D(ShowBase):
         self._latest_key = None
         self.g = graph
         self.g.graph["show_labels"] = not nolabels
+        self.node_mesh_prototype = mesh.make_node(radius=1.5, marker=4)
+        if isinstance(graph, nx.MultiDiGraph):
+            self.edge_mesh_prototype = mesh.make_edge("md")
+        elif isinstance(graph, nx.DiGraph):
+            self.edge_mesh_prototype = mesh.make_edge("d")
+        elif isinstance(graph, nx.MultiGraph):
+            self.edge_mesh_prototype = mesh.make_edge("m")
+        elif isinstance(graph, nx.Graph):
+            self.edge_mesh_prototype = mesh.make_edge()
+        else:
+            raise TypeError(
+                f"graph of type={type(graph)} not supported, must be subclass of nx.Graph"
+            )
 
         if self.win:
             properties = WindowProperties()
@@ -306,11 +319,7 @@ class Nx3D(ShowBase):
         graph = self.g
         for i, (n, nd) in enumerate(graph.nodes(data=True)):
             pid = f"node_{i}"
-            try:
-                node: NodePath = self._init_panda3d_model(pid, "node", self.node_lights)
-            except AttributeError:
-                logger.error("call _init_lights before _init_models")
-                raise
+            node: NodePath = self._init_panda3d_model(pid, "node", self.node_lights)
             node.reparentTo(self.render)
             utils.set_color(node, nd["color"])
             node.setPos(*nd["pos"])
@@ -453,11 +462,6 @@ class Nx3D(ShowBase):
             - pid: unique id for the NodePath
             - meshtype: can be 'edge' or 'node'
         """
-        try:
-            self.node_mesh_prototype
-        except AttributeError:
-            self.node_mesh_prototype = mesh.make_node(scale=3.0, marker=4)
-            self.edge_mesh_prototype = mesh.make_edge()
         if meshtype == "node":
             gn = mesh.pv_to_p3(self.node_mesh_prototype)
         elif meshtype == "edge":
