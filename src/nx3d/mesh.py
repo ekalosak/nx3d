@@ -10,7 +10,13 @@ from panda3d.core import (
     GeomVertexFormat,
     GeomVertexWriter,
 )
-from pyvista.utilities.geometric_objects import Arrow, Cylinder, PlatonicSolid
+from pyvista import PolyDataFilters as F
+from pyvista.utilities.geometric_objects import (
+    Arrow,
+    CircularArc,
+    Cylinder,
+    PlatonicSolid,
+)
 
 
 def line(face: np.ndarray):
@@ -76,16 +82,78 @@ def make_node(radius=0.5, marker=0) -> pv.PolyData:
     return PlatonicSolid(marker, radius=radius, center=[0, 0, 0])
 
 
-def bend(ms: pv.PolyData, degrees: float) -> pv.PolyData:
-    return ms
+def faces(ms):
+    ix = 0
+    faces = []
+    while ix < len(ms.faces):
+        stride = ms.faces[ix]
+        face = ms.faces[ix + 1 : ix + 1 + stride]
+        faces.append(face)
+        ix += 1 + stride
+    return faces
+
+
+def remove_face(verts, mesh):
+    for fc in faces(mesh):
+        print(face)
+        print(fc)
+        return
+
+
+# def glue(c1, c2) -> pv.PolyData:
+#     """ glue the meshes together along some faces """
+#     tf1 = faces(c1)[-2]  # top face of a pv.Cylinder is the penultimate
+#     bf2 = faces(c2)[-1]  # bottom face of a pv.Cylinder is the last
+#     nfvs = np.empty(c1.points[tf1].shape)
+#     nfvs[:, :2] = c2.points[tf1, :2]
+#     nfvs[:, 2] = np.average((c1.points[tf1, 2] + c2.points[bf2, 2]) / 2.)  # has the glued vaces verts
+#     print(tf1)
+#     print(c1.faces)
+#     return
+#     # vertices = np.array([[0, 0, 0], [1, 0, 0], [1, 0.5, 0], [0, 0.5, 0]])
+#     # mesh = pyvista.PolyData(vertices)
+#     # faces = np.hstack([[3, 0, 1, 2], [3, 0, 3, 2]])
+#     # mesh = pyvista.PolyData(vertices, faces)
+
+
+def bent_cylinder(nsegments=3, radius=0.08):
+    try:
+        return CircularArc(
+            [0, 0, 0], [0, 0, 1], [0, 0, 0.5], resolution=nsegments
+        ).tube(radius=radius)
+    except ValueError as e:
+        raise ValueError(
+            "Try adjusting nsegments, this may be a numerical error in CircularArc"
+        ) from e
+
+
+if __name__ == "__main__":
+    ms = bent_cylinder(8)
+    if 1:
+        pl = pv.Plotter()
+        pl.add_mesh(ms)
+        pl.show_axes()
+        pl.show(full_screen=False)
+
+
+def bent_arrow(nsegments=3, **kwargs):
+    ...
 
 
 def make_edge(kind="g", height=1, radius=0.4, nsides=9) -> pv.PolyData:
     allowedkinds = ["g", "m", "d", "md"]
     if kind not in allowedkinds:
         raise ValueError(f"unsupported edge kind {kind}; must be one of {allowedkinds}")
-    if "d" in kind:
-        ms = Arrow(
+    if kind == "g":
+        ms = Cylinder(
+            center=[0, 0, height / 2],
+            direction=[0, 0, 1],
+            height=height,
+            radius=radius,
+            resolution=nsides,
+        )
+    elif "d" in kind:
+        ms = bent_arrow(
             direction=[0, 0, 1],
             tip_length=0.4,
             tip_radius=radius * 2,
@@ -95,13 +163,11 @@ def make_edge(kind="g", height=1, radius=0.4, nsides=9) -> pv.PolyData:
             scale=height,
         )
     else:
-        ms = Cylinder(
+        ms = bent_cylinder(
             center=[0, 0, height / 2],
             direction=[0, 0, 1],
             height=height,
             radius=radius,
             resolution=nsides,
         )
-    if kind != "g":
-        ms = bend(ms, 30.0)
     return ms
